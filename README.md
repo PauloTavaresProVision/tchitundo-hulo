@@ -16,6 +16,22 @@ npm run dev
 npm run build
 ```
 
+## Pré-visualização em Docker
+
+O projecto inclui uma configuração pronta para publicação temporária na porta `7788`:
+
+```bash
+docker compose up -d --build
+```
+
+Depois de arrancar, a página fica disponível em `http://IP-DO-SERVIDOR:7788`.
+
+Para actualizar a pré-visualização, execute novamente o comando acima. Para desligar:
+
+```bash
+docker compose down
+```
+
 This starter does not use `wrangler.jsonc`.
 
 ## Included Shape

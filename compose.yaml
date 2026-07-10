@@ -1,0 +1,13 @@
+name: tchitundo-hulo-preview
+
+services:
+  site:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: tchitundo-hulo-preview:latest
+    container_name: tchitundo-hulo-preview
+    restart: unless-stopped
+    init: true
+    ports:
+      - "7788:7788"
