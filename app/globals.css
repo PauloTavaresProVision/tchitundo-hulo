@@ -945,3 +945,34 @@ main { background: var(--ink); }
     font-size: 12px;
   }
 }
+
+/* Institutional separator system. Accent typography remains copper. */
+:root { --separator: #0033aa; }
+
+.hero { border-bottom-color: var(--separator); }
+.hero-portals,
+.hero-portals a { border-color: var(--separator) !important; }
+
+.campaign,
+.territory,
+.manifesto,
+.gallery-section,
+.film,
+.culture,
+.documents,
+.archive,
+.closing { border-top-color: var(--separator); }
+
+.campaign-visual { border-left-color: var(--separator); }
+.territory-stage,
+.territory-notes article,
+.gallery-item,
+.agenda-status,
+.agenda-list,
+.agenda-list article,
+.archive-grid,
+.archive-grid article { border-color: var(--separator); }
+
+@media (max-width: 760px) {
+  .gallery-item > span { border-top-color: var(--separator); }
+}
