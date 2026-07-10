@@ -20,8 +20,8 @@ export async function generateMetadata(): Promise<Metadata> {
     title: "Tchitundo-Hulo | Standard Bank Angola",
     description: "Uma plataforma editorial dedicada ao património, à memória e ao futuro de Angola.",
     icons: {
-      icon: "/brand/standard-bank-logo-official.png",
-      shortcut: "/brand/standard-bank-logo-official.png",
+      icon: "/brand/standard-bank-logo-white-official.png",
+      shortcut: "/brand/standard-bank-logo-white-official.png",
     },
     openGraph: {
       title: "Tchitundo-Hulo — Marcas na pedra. Memória viva.",

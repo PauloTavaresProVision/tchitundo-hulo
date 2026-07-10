@@ -4,10 +4,40 @@ import { useEffect, useState } from "react";
 
 const gallery = [
   {
+    src: "/media/community-rock.jpg",
+    alt: "Comunidade junto às formações rochosas de Tchitundo-Hulo",
+    label: "O território é humano",
+    orientation: "wide",
+  },
+  {
+    src: "/media/community-portrait-vertical.jpg",
+    alt: "Retrato de uma mulher da comunidade do sul de Angola",
+    label: "Rosto e permanência",
+    orientation: "tall",
+  },
+  {
     src: "/media/gallery-rock-01.jpg",
     alt: "Painel de gravuras rupestres de Tchitundo-Hulo",
     label: "Memória sobre pedra",
     orientation: "wide",
+  },
+  {
+    src: "/media/community-women.jpg",
+    alt: "Mulheres da comunidade em vestes tradicionais",
+    label: "Cultura que continua",
+    orientation: "wide",
+  },
+  {
+    src: "/media/engraving-circles.jpg",
+    alt: "Conjunto de gravuras circulares sobre uma superfície rochosa",
+    label: "Geometrias ancestrais",
+    orientation: "wide",
+  },
+  {
+    src: "/media/community-portrait.jpg",
+    alt: "Retrato de uma mulher da comunidade na paisagem do Namibe",
+    label: "Presença",
+    orientation: "standard",
   },
   {
     src: "/media/gallery-rock-02.jpg",
@@ -16,27 +46,21 @@ const gallery = [
     orientation: "tall",
   },
   {
-    src: "/media/hero-aerial.jpg",
-    alt: "Vista ampla da paisagem rochosa de Tchitundo-Hulo",
-    label: "A paisagem que guarda",
+    src: "/media/community-guide.jpg",
+    alt: "Homem da comunidade diante da paisagem de Tchitundo-Hulo",
+    label: "Quem conhece o caminho",
     orientation: "wide",
   },
   {
-    src: "/media/gallery-rock-03.jpg",
-    alt: "Pormenor de gravuras em tons minerais",
-    label: "Camadas do tempo",
-    orientation: "standard",
-  },
-  {
-    src: "/media/gallery-rock-04.jpg",
-    alt: "Formas circulares pintadas na rocha",
-    label: "Geometrias ancestrais",
+    src: "/media/rock-silhouette-vertical.jpg",
+    alt: "Recorte monumental de uma formação rochosa contra o céu azul",
+    label: "A pedra e o céu",
     orientation: "tall",
   },
   {
-    src: "/media/gallery-rock-05.jpg",
-    alt: "Conjunto de figuras rupestres sobre pedra",
-    label: "Uma linguagem viva",
+    src: "/media/hero-aerial.jpg",
+    alt: "Vista ampla da paisagem rochosa de Tchitundo-Hulo",
+    label: "A paisagem que guarda",
     orientation: "standard",
   },
 ];
@@ -115,7 +139,7 @@ export default function Home() {
         <div className="hero-grain" aria-hidden="true" />
         <header className="site-header shell">
           <a className="brand" href="#inicio" aria-label="Standard Bank — início">
-            <img src="/brand/standard-bank-logo-transparent-final.png" alt="Standard Bank" />
+            <img src="/brand/standard-bank-logo-white-official.png" alt="Standard Bank" />
           </a>
           <nav className="desktop-nav" aria-label="Navegação principal">
             <a href="#cultura">Agenda cultural</a>
@@ -174,7 +198,7 @@ export default function Home() {
             <a className="text-link" href="#territorio">Conhecer Tchitundo-Hulo <span aria-hidden="true">→</span></a>
           </div>
           <figure className="campaign-visual">
-            <img src="/media/hero-aerial.jpg" alt="Paisagem de Tchitundo-Hulo, no sul de Angola" />
+            <img src="/media/community-rock.jpg" alt="Comunidade junto às formações rochosas de Tchitundo-Hulo" />
             <figcaption><span>15°37&apos; S</span><span>12°48&apos; E</span><strong>Namibe · Angola</strong></figcaption>
           </figure>
         </div>
@@ -192,7 +216,7 @@ export default function Home() {
         </div>
         <div className="territory-stage shell">
           <div className="territory-image">
-            <img src="/media/gallery-rock-01.jpg" alt="Gravuras rupestres de Tchitundo-Hulo" />
+            <img src="/media/engraving-circles.jpg" alt="Gravuras circulares de Tchitundo-Hulo" />
             <span className="image-marker marker-one">Mukai</span>
             <span className="image-marker marker-two">Mulume</span>
           </div>
@@ -327,7 +351,7 @@ export default function Home() {
 
       <footer className="site-footer">
         <div className="shell footer-top">
-          <img src="/brand/standard-bank-logo-transparent-final.png" alt="Standard Bank" />
+          <img src="/brand/standard-bank-logo-white-official.png" alt="Standard Bank" />
           <nav aria-label="Navegação do rodapé">
             <a href="#campanha">Campanha</a><a href="#territorio">Tchitundo-Hulo</a><a href="#galeria">Galeria</a><a href="#cultura">Cultura</a><a href="#documentos">Documentos</a>
           </nav>
