@@ -284,3 +284,263 @@ img { max-width: 100%; display: block; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* Approved cinematic system — the campaign print is the source of truth. */
+:root {
+  --ink: #020917;
+  --ink-soft: #061226;
+  --ink-panel: #081a32;
+  --blue: #0a2e6b;
+  --blue-deep: #001e62;
+  --copper: #f05a2a;
+  --sand: #d8af6b;
+  --ivory: #f4f0e8;
+  --line: rgba(240, 90, 42, .5);
+}
+
+html, body { background: var(--ink); }
+body { font-family: var(--font-roboto), Roboto, Arial, sans-serif; }
+main { background: var(--ink); }
+.shell { width: min(1480px, calc(100% - 88px)); }
+.eyebrow { margin-bottom: 24px; color: var(--sand); font-size: 11px; letter-spacing: .24em; }
+.eyebrow.dark { color: var(--sand); }
+.text-link { color: #ff7d50; border-color: var(--copper); }
+
+.hero {
+  min-height: 900px;
+  height: 100svh;
+  max-height: 1080px;
+  border-color: var(--copper);
+}
+.hero-photo {
+  background-image:
+    linear-gradient(90deg, #020917 0%, rgba(2,9,23,.98) 16%, rgba(2,9,23,.84) 34%, rgba(2,9,23,.34) 58%, rgba(2,9,23,.08) 100%),
+    linear-gradient(0deg, rgba(2,9,23,.42), transparent 44%),
+    url('/media/gallery-rock-02.jpg');
+  background-size: cover, cover, cover;
+  background-position: center, center, 70% 42%;
+  filter: saturate(.92) contrast(1.06);
+  transform: scale(1.015);
+}
+.hero-photo::after {
+  background:
+    linear-gradient(116deg, transparent 0 69%, rgba(240,90,42,.85) 69.05% 69.13%, transparent 69.2%),
+    radial-gradient(circle at 76% 39%, transparent 0 19%, rgba(2,9,23,.08) 36%, rgba(2,9,23,.3) 100%);
+}
+.hero-grain { opacity: .1; }
+.site-header { height: 108px; border-color: rgba(255,255,255,.14); }
+.brand { width: 300px; height: 82px; display: flex; align-items: center; }
+.brand img { width: 100%; height: 100%; max-height: none; object-fit: contain; object-position: left center; }
+.desktop-nav { gap: 33px; font-size: 10px; letter-spacing: .15em; }
+.hero-content { padding-top: clamp(102px, 12vh, 142px); }
+.hero h1 {
+  max-width: 780px;
+  font-size: clamp(84px, 8.4vw, 146px);
+  line-height: .79;
+  letter-spacing: -.055em;
+  font-weight: 300;
+}
+.incision-rule { width: min(430px, 39vw); margin-top: 48px; }
+.hero-lead { margin-bottom: 38px; font-size: clamp(22px, 1.9vw, 31px); }
+.hero-portals { height: 128px; grid-template-columns: repeat(3, 1fr); background: rgba(2,9,23,.93); border-color: var(--copper); backdrop-filter: blur(16px); }
+.hero-portals a { padding: 24px 46px; border-color: rgba(240,90,42,.78); }
+.hero-portals a:last-child { border-right: 0; }
+.hero-portals strong { letter-spacing: .14em; }
+.scroll-cue { bottom: 150px; }
+
+.campaign,
+.territory,
+.manifesto,
+.gallery-section,
+.film,
+.culture,
+.documents,
+.archive,
+.closing {
+  position: relative;
+  border-top: 1px solid rgba(240,90,42,.34);
+}
+.campaign,
+.territory,
+.gallery-section,
+.culture,
+.documents,
+.archive { padding: clamp(96px, 8vw, 128px) 0; }
+
+.campaign {
+  background:
+    linear-gradient(90deg, rgba(10,46,107,.16), transparent 32%),
+    var(--ink);
+}
+.section-grid { grid-template-columns: 68px minmax(0, .88fr) minmax(440px, 1.12fr); gap: 46px; }
+.section-index { writing-mode: initial; color: var(--copper); padding-top: 5px; }
+.campaign h2,
+.gallery-heading h2,
+.documents h2 {
+  margin-bottom: 36px;
+  color: var(--ivory);
+  font-size: clamp(54px, 5.4vw, 84px);
+  line-height: .9;
+  font-weight: 300;
+}
+.campaign-copy > p:not(.eyebrow) { line-height: 1.68; }
+.campaign-copy .large-copy { font-size: clamp(21px, 1.8vw, 28px) !important; }
+.campaign-visual { margin-top: 0; min-height: 560px; border-left: 1px solid rgba(240,90,42,.7); }
+.campaign-visual::before { inset: 14px; border-color: rgba(216,175,107,.34); }
+.campaign-visual img { height: 560px; filter: saturate(.82) contrast(1.08); }
+
+.territory {
+  background:
+    linear-gradient(180deg, var(--ink-soft), #03101f 100%);
+  color: var(--ivory);
+}
+.territory-heading { grid-template-columns: 1.05fr .75fr; gap: 90px; margin-bottom: 62px; }
+.territory h2,
+.culture h2,
+.archive h2 { color: var(--ivory); font-size: clamp(56px, 6vw, 94px); line-height: .88; font-weight: 300; }
+.territory-heading > p,
+.archive-heading > p { color: rgba(244,240,232,.63); font-size: 16px; line-height: 1.7; }
+.territory-stage { grid-template-columns: minmax(0, 1.45fr) minmax(350px, .55fr); border: 1px solid rgba(240,90,42,.5); }
+.territory-image { min-height: 640px; }
+.territory-image img { filter: saturate(.82) contrast(1.08); }
+.territory-notes { background: rgba(2,9,23,.92); }
+.territory-notes article { padding: 48px 42px; border-color: rgba(240,90,42,.42); }
+.territory-notes h3 { font-size: 25px; }
+.territory-notes p { color: rgba(255,255,255,.62); }
+
+.manifesto { min-height: 620px; }
+.manifesto-image {
+  background:
+    linear-gradient(90deg, rgba(2,9,23,.93), rgba(0,30,98,.54) 52%, rgba(2,9,23,.72)),
+    url('/media/gallery-rock-04.jpg') center 46% / cover;
+}
+.manifesto blockquote { max-width: 1040px; font-size: clamp(40px, 5vw, 72px); line-height: 1.04; }
+
+.gallery-section { background: var(--ink); }
+.gallery-heading { grid-template-columns: 1.18fr .62fr; gap: 80px; margin-bottom: 58px; }
+.gallery-grid { grid-auto-rows: 210px; gap: 10px; }
+.gallery-item { border: 1px solid rgba(240,90,42,.22); }
+.gallery-item::after { background: linear-gradient(0deg, rgba(2,9,23,.9), transparent 52%); }
+.gallery-item > span { inset: auto 20px 20px; }
+
+.film { min-height: 690px; }
+.film-photo {
+  background:
+    linear-gradient(90deg, rgba(2,9,23,.98), rgba(2,9,23,.65) 47%, rgba(2,9,23,.16)),
+    url('/media/gallery-rock-05.jpg') center 43% / cover;
+}
+.film h2 { font-size: clamp(58px, 7vw, 104px); }
+
+.culture {
+  background:
+    linear-gradient(90deg, rgba(10,46,107,.18), transparent 44%),
+    var(--ink-soft);
+  color: var(--ivory);
+}
+.culture-layout { grid-template-columns: .7fr 1.3fr; gap: 88px; }
+.culture-intro > p:not(.eyebrow) { color: rgba(244,240,232,.62); font-size: 16px; line-height: 1.7; }
+.agenda-status { border-color: rgba(240,90,42,.55); color: var(--sand); }
+.agenda-list { border-color: rgba(240,90,42,.48); }
+.agenda-list article { min-height: 150px; border-color: rgba(240,90,42,.36); }
+.agenda-list article:hover { background: rgba(10,46,107,.25); }
+.agenda-list article p { color: var(--sand); }
+.agenda-list h3 { color: var(--ivory); font-size: 25px; }
+.agenda-list small { color: rgba(244,240,232,.54); }
+
+.documents { background: #020713; }
+.documents-layout { grid-template-columns: .78fr 1.22fr; gap: 82px; }
+.document-list > * { min-height: 120px; }
+
+.archive {
+  background:
+    radial-gradient(circle at 80% 18%, rgba(10,46,107,.3), transparent 33%),
+    var(--ink-soft);
+  color: var(--ivory);
+}
+.archive-heading { grid-template-columns: 1fr .8fr; gap: 86px; margin-bottom: 60px; }
+.archive-grid { border-color: rgba(240,90,42,.48); }
+.archive-grid article { min-height: 310px; padding: 30px; border-color: rgba(240,90,42,.42); background: rgba(2,9,23,.42); }
+.archive-grid article:hover { background: rgba(10,46,107,.3); }
+.archive-grid article.active { background: rgba(0,30,98,.74); }
+.archive-grid small { color: rgba(244,240,232,.5); }
+.archive-grid h3 { color: var(--ivory); font-size: 30px; }
+
+.closing { min-height: 700px; }
+.closing-photo {
+  background:
+    linear-gradient(90deg, rgba(2,9,23,.98), rgba(0,30,98,.56) 55%, rgba(2,9,23,.2)),
+    url('/media/hero-aerial.jpg') center 52% / cover;
+}
+.closing h2 { font-size: clamp(62px, 8vw, 112px); }
+.site-footer { padding-top: 58px; }
+.footer-top { padding-bottom: 50px; }
+.footer-top img { width: 285px; max-height: 82px; }
+
+@media (max-width: 1100px) {
+  .shell { width: min(980px, calc(100% - 52px)); }
+  .hero-portals { grid-template-columns: repeat(3, 1fr); height: 126px; }
+  .hero-portals a { padding: 18px 22px; border-bottom: 0 !important; }
+  .scroll-cue { bottom: 148px; }
+  .section-grid { grid-template-columns: 48px 1fr; }
+  .campaign-visual { grid-column: 2; }
+  .territory-heading,
+  .gallery-heading,
+  .archive-heading { gap: 50px; }
+  .territory-stage { grid-template-columns: 1fr; }
+  .territory-notes { grid-template-columns: 1fr 1fr; grid-template-rows: auto; }
+  .culture-layout,
+  .documents-layout { grid-template-columns: 1fr; gap: 58px; }
+}
+
+@media (max-width: 760px) {
+  .shell { width: calc(100% - 34px); }
+  .site-header { height: 82px; }
+  .brand { width: 220px; height: 66px; }
+  .hero { min-height: 820px; }
+  .hero-photo { background-position: center, center, 61% 44%; }
+  .hero-content { padding-top: 88px; }
+  .hero h1 { font-size: clamp(58px, 18vw, 86px); }
+  .incision-rule { margin-top: 34px; width: 74vw; }
+  .hero-lead { font-size: 20px; }
+  .hero-portals { height: 138px; }
+  .hero-portals a { grid-template-columns: 24px 1fr; padding: 13px 10px; }
+  .hero-portals strong { font-size: 9px; letter-spacing: .08em; }
+  .campaign,
+  .territory,
+  .gallery-section,
+  .culture,
+  .documents,
+  .archive { padding: 82px 0; }
+  .section-grid { grid-template-columns: 1fr; }
+  .campaign-visual { grid-column: auto; min-height: 430px; }
+  .campaign-visual img { height: 430px; }
+  .territory-heading,
+  .gallery-heading,
+  .archive-heading { grid-template-columns: 1fr; gap: 30px; margin-bottom: 44px; }
+  .territory h2,
+  .culture h2,
+  .archive h2,
+  .campaign h2,
+  .gallery-heading h2,
+  .documents h2 { font-size: 46px; }
+  .territory-image { min-height: 450px; }
+  .territory-notes { grid-template-columns: 1fr; }
+  .territory-notes article { min-height: 260px; }
+  .manifesto { min-height: 520px; }
+  .manifesto blockquote { font-size: 34px; }
+  .gallery-grid { grid-template-columns: 1fr 1fr; grid-auto-rows: 230px; }
+  .film { min-height: 620px; }
+  .film h2 { font-size: 52px; }
+  .archive-grid { grid-template-columns: 1fr; }
+  .archive-grid article { min-height: 235px; border-right: 0; }
+  .closing { min-height: 620px; }
+  .closing h2 { font-size: 58px; }
+}
+
+@media (max-width: 440px) {
+  .brand { width: 190px; }
+  .hero h1 { font-size: 55px; }
+  .hero-portals { grid-template-columns: 1fr; height: 162px; }
+  .hero-portals a { border-right: 0; border-bottom: 1px solid rgba(240,90,42,.46) !important; }
+  .gallery-grid { grid-template-columns: 1fr; }
+}

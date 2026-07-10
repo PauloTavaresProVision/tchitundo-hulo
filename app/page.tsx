@@ -115,14 +115,14 @@ export default function Home() {
         <div className="hero-grain" aria-hidden="true" />
         <header className="site-header shell">
           <a className="brand" href="#inicio" aria-label="Standard Bank — início">
-            <img src="/brand/standard-bank-logo-official.png" alt="Standard Bank" />
+            <img src="/brand/standard-bank-logo-transparent-final.png" alt="Standard Bank" />
           </a>
           <nav className="desktop-nav" aria-label="Navegação principal">
+            <a href="#cultura">Agenda cultural</a>
             <a href="#campanha">A campanha</a>
             <a href="#territorio">O lugar</a>
             <a href="#galeria">Galeria</a>
-            <a href="#cultura">Cultura</a>
-            <a href="#arquivo">Arquivo</a>
+            <a href="#impacto">Preservar</a>
           </nav>
           <button
             className="menu-button"
@@ -153,10 +153,9 @@ export default function Home() {
         </a>
 
         <div className="hero-portals" aria-label="Entradas principais">
-          <a href="#campanha"><span>01</span><strong>A campanha</strong><i>→</i></a>
-          <a href="#territorio"><span>02</span><strong>O lugar</strong><i>→</i></a>
-          <a href="#galeria"><span>03</span><strong>Galeria</strong><i>→</i></a>
-          <a href="#cultura"><span>04</span><strong>Agenda cultural</strong><i>→</i></a>
+          <a href="#cultura"><span>01</span><strong>Agenda cultural</strong><i>→</i></a>
+          <a href="#campanha"><span>02</span><strong>A campanha</strong><i>→</i></a>
+          <a href="#territorio"><span>03</span><strong>O lugar</strong><i>→</i></a>
         </div>
       </section>
 
@@ -212,7 +211,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="manifesto" aria-label="Manifesto de preservação">
+      <section className="manifesto" id="impacto" aria-label="Manifesto de preservação">
         <div className="manifesto-image" aria-hidden="true" />
         <div className="shell manifesto-content">
           <p className="eyebrow">Impacto e preservação</p>
@@ -328,7 +327,7 @@ export default function Home() {
 
       <footer className="site-footer">
         <div className="shell footer-top">
-          <img src="/brand/standard-bank-logo-official.png" alt="Standard Bank" />
+          <img src="/brand/standard-bank-logo-transparent-final.png" alt="Standard Bank" />
           <nav aria-label="Navegação do rodapé">
             <a href="#campanha">Campanha</a><a href="#territorio">Tchitundo-Hulo</a><a href="#galeria">Galeria</a><a href="#cultura">Cultura</a><a href="#documentos">Documentos</a>
           </nav>
