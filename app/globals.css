@@ -1055,16 +1055,63 @@ main { background: var(--ink); }
   .hero h1 { font-size: clamp(47px, 15.5vw, 61px); }
 }
 
-/* Client revision: neutral white navigation marks and no diagonal overlay. */
+/* Client revision: white navigation marks, clean lettering and no diagonal overlay. */
 .hero-photo::after { background: none !important; }
 .hero { border-bottom-color: #fff; }
+
+.hero h1 {
+  width: min(940px, 62vw);
+  background-image:
+    linear-gradient(135deg, #f8dda0 0%, #d79a2b 30%, #f1c66d 52%, #9f610e 76%, #e6ac38 100%),
+    url('/media/engraving-circles.jpg');
+  background-size: 100% 100%, 110% auto;
+  background-position: center, 50% 48%;
+  background-blend-mode: color, normal;
+  font-size: clamp(86px, 7.8vw, 138px);
+  line-height: .88;
+  letter-spacing: -.075em;
+  filter: saturate(1.05) contrast(1.03);
+}
+.hero-title-bottom { padding-right: 0; }
+
+.hero .eyebrow i { background: #fff; }
+.hero .incision-rule { color: #fff; }
+.hero .incision-rule::before,
+.hero .incision-rule::after { background: #fff; }
+.hero .hero-cta { color: #fff; border-color: #fff; }
+.hero .scroll-cue { color: #fff; border-color: #fff; }
+.scroll-progress { background: #fff; }
+
 .hero-portals,
 .hero-portals a { border-color: #fff !important; }
 .hero-portals i { color: #fff; }
 .portal-mark {
   background-color: transparent;
-  background-blend-mode: screen;
-  mix-blend-mode: screen;
-  filter: grayscale(1) contrast(3) brightness(3);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  background-blend-mode: normal;
+  mix-blend-mode: normal;
+  filter: none;
 }
+.portal-mark-agenda { background-image: url('/media/mark-agenda-white.png'); }
+.portal-mark-campaign { background-image: url('/media/mark-campaign-white.png'); }
+.portal-mark-place { background-image: url('/media/mark-place-white.png'); }
 .campaign { border-top-color: #fff; }
+
+@media (max-width: 1100px) {
+  .hero h1 { width: min(760px, 70vw); font-size: clamp(76px, 9.4vw, 108px); }
+}
+
+@media (max-width: 760px) {
+  .hero-photo {
+    background-image:
+      linear-gradient(90deg, rgba(2,7,16,.56) 0%, rgba(2,7,16,.24) 50%, rgba(2,7,16,.03) 100%),
+      linear-gradient(0deg, rgba(2,7,16,.34), transparent 52%),
+      url('/media/hero-sunset-portal.png');
+    background-position: center, center, 86% center;
+  }
+  .hero h1 { width: 100%; font-size: clamp(46px, 13.6vw, 56px); line-height: .9; }
+  .hero-title-bottom { padding-right: 0; }
+  .portal-mark { width: 54px; height: 56px; transform: none; }
+}
