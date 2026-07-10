@@ -24,12 +24,12 @@ export async function generateMetadata(): Promise<Metadata> {
       shortcut: "/brand/standard-bank-logo-white-official.png",
     },
     openGraph: {
-      title: "Tchitundo-Hulo — Marcas na pedra. Memória viva.",
+      title: "Tchitundo-Hulo: marcas na pedra, memória viva.",
       description: "Uma iniciativa do Standard Bank de Angola para valorizar o património cultural angolano.",
       type: "website",
       locale: "pt_AO",
       url: origin,
-      images: [{ url: `${origin}/og.png`, width: 1536, height: 864, alt: "Tchitundo-Hulo — Marcas na pedra. Memória viva." }],
+      images: [{ url: `${origin}/og.png`, width: 1536, height: 864, alt: "Tchitundo-Hulo: marcas na pedra, memória viva." }],
     },
     twitter: {
       card: "summary_large_image",

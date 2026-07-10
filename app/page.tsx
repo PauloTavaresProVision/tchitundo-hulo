@@ -1,102 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { siteContent } from "@/content/site-content";
 
-const gallery = [
-  {
-    src: "/media/community-rock.jpg",
-    alt: "Comunidade junto às formações rochosas de Tchitundo-Hulo",
-    label: "O território é humano",
-    orientation: "wide",
-  },
-  {
-    src: "/media/community-portrait-vertical.jpg",
-    alt: "Retrato de uma mulher da comunidade do sul de Angola",
-    label: "Rosto e permanência",
-    orientation: "tall",
-  },
-  {
-    src: "/media/gallery-rock-01.jpg",
-    alt: "Painel de gravuras rupestres de Tchitundo-Hulo",
-    label: "Memória sobre pedra",
-    orientation: "wide",
-  },
-  {
-    src: "/media/community-women.jpg",
-    alt: "Mulheres da comunidade em vestes tradicionais",
-    label: "Cultura que continua",
-    orientation: "wide",
-  },
-  {
-    src: "/media/engraving-circles.jpg",
-    alt: "Conjunto de gravuras circulares sobre uma superfície rochosa",
-    label: "Geometrias ancestrais",
-    orientation: "wide",
-  },
-  {
-    src: "/media/community-portrait.jpg",
-    alt: "Retrato de uma mulher da comunidade na paisagem do Namibe",
-    label: "Presença",
-    orientation: "standard",
-  },
-  {
-    src: "/media/gallery-rock-02.jpg",
-    alt: "Detalhe vertical de uma figura rupestre",
-    label: "Traço e continuidade",
-    orientation: "tall",
-  },
-  {
-    src: "/media/community-guide.jpg",
-    alt: "Homem da comunidade diante da paisagem de Tchitundo-Hulo",
-    label: "Quem conhece o caminho",
-    orientation: "wide",
-  },
-  {
-    src: "/media/rock-silhouette-vertical.jpg",
-    alt: "Recorte monumental de uma formação rochosa contra o céu azul",
-    label: "A pedra e o céu",
-    orientation: "tall",
-  },
-  {
-    src: "/media/hero-aerial.jpg",
-    alt: "Vista ampla da paisagem rochosa de Tchitundo-Hulo",
-    label: "A paisagem que guarda",
-    orientation: "standard",
-  },
-];
-
-const agenda = [
-  {
-    number: "01",
-    type: "Encontro",
-    title: "Conversas sobre património",
-    detail: "Investigadores, comunidade e novas leituras sobre Tchitundo-Hulo.",
-  },
-  {
-    number: "02",
-    type: "Experiência",
-    title: "Rota das gravuras",
-    detail: "Uma aproximação responsável ao território, à paisagem e à memória.",
-  },
-  {
-    number: "03",
-    type: "Educação",
-    title: "Memória e futuro",
-    detail: "Conteúdos pedagógicos para aproximar novas gerações do património.",
-  },
-];
-
-const archive = [
-  { year: "2026", title: "Tchitundo-Hulo", tag: "Património cultural", active: true },
-  { year: "Próximo", title: "Cultura em movimento", tag: "Plataforma editorial" },
-  { year: "Arquivo", title: "Comunidade e impacto", tag: "Iniciativas institucionais" },
-];
+const { gallery, agenda, documents, archive, portals } = siteContent;
 
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<(typeof gallery)[number] | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [filmOpen, setFilmOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const selectedImage = selectedIndex === null ? null : gallery[selectedIndex];
 
   useEffect(() => {
     const onScroll = () => {
@@ -109,13 +23,19 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const isOpen = Boolean(selectedImage) || filmOpen || menuOpen;
+    const isOpen = selectedIndex !== null || filmOpen || menuOpen;
     document.body.style.overflow = isOpen ? "hidden" : "";
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setSelectedImage(null);
+        setSelectedIndex(null);
         setFilmOpen(false);
         setMenuOpen(false);
+      }
+      if (event.key === "ArrowLeft") {
+        setSelectedIndex((current) => current === null ? null : (current - 1 + gallery.length) % gallery.length);
+      }
+      if (event.key === "ArrowRight") {
+        setSelectedIndex((current) => current === null ? null : (current + 1) % gallery.length);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -123,9 +43,12 @@ export default function Home() {
       document.body.style.overflow = "";
       window.removeEventListener("keydown", onKey);
     };
-  }, [selectedImage, filmOpen, menuOpen]);
+  }, [selectedIndex, filmOpen, menuOpen]);
 
   const closeMenu = () => setMenuOpen(false);
+  const moveGallery = (direction: -1 | 1) => {
+    setSelectedIndex((current) => current === null ? null : (current + direction + gallery.length) % gallery.length);
+  };
 
   return (
     <main>
@@ -138,7 +61,7 @@ export default function Home() {
         <div className="hero-photo" aria-hidden="true" />
         <div className="hero-grain" aria-hidden="true" />
         <header className="site-header shell">
-          <a className="brand" href="#inicio" aria-label="Standard Bank — início">
+          <a className="brand" href="#inicio" aria-label="Standard Bank, início">
             <img src="/brand/standard-bank-logo-white-official.png" alt="Standard Bank" />
           </a>
           <nav className="desktop-nav" aria-label="Navegação principal">
@@ -177,9 +100,13 @@ export default function Home() {
         </a>
 
         <div className="hero-portals" aria-label="Entradas principais">
-          <a href="#cultura"><span>01</span><strong>Agenda cultural</strong><i>→</i></a>
-          <a href="#campanha"><span>02</span><strong>A campanha</strong><i>→</i></a>
-          <a href="#territorio"><span>03</span><strong>O lugar</strong><i>→</i></a>
+          {portals.map((portal) => (
+            <a href={portal.href} key={portal.id}>
+              <span className={`portal-mark portal-mark-${portal.mark}`} aria-hidden="true" />
+              <strong>{portal.label}</strong>
+              <i aria-hidden="true">→</i>
+            </a>
+          ))}
         </div>
       </section>
 
@@ -193,7 +120,7 @@ export default function Home() {
               Tchitundo-Hulo é uma iniciativa de valorização do património cultural angolano promovida pelo Standard Bank de Angola.
             </p>
             <p>
-              Mais do que olhar para o passado, a campanha reconhece na memória um ponto de partida para o futuro — aproximando pessoas, conhecimento e território através de uma narrativa viva, respeitosa e duradoura.
+              Mais do que olhar para o passado, a campanha reconhece na memória um ponto de partida para o futuro. Aproxima pessoas, conhecimento e território através de uma narrativa viva, respeitosa e duradoura.
             </p>
             <a className="text-link" href="#territorio">Conhecer Tchitundo-Hulo <span aria-hidden="true">→</span></a>
           </div>
@@ -258,7 +185,7 @@ export default function Home() {
               className={`gallery-item ${image.orientation}`}
               type="button"
               key={image.src}
-              onClick={() => setSelectedImage(image)}
+              onClick={() => setSelectedIndex(index)}
               aria-label={`Ampliar imagem: ${image.label}`}
             >
               <img src={image.src} alt={image.alt} draggable={false} loading={index > 1 ? "lazy" : "eager"} />
@@ -285,17 +212,27 @@ export default function Home() {
       <section className="culture" id="cultura" aria-labelledby="culture-title">
         <div className="shell culture-layout">
           <div className="culture-intro">
-            <p className="eyebrow dark">Cultura e agenda</p>
-            <h2 id="culture-title">A cultura<br />continua.</h2>
-            <p>Um espaço editorial permanente para acompanhar encontros, experiências e conteúdos que aproximam o património das comunidades.</p>
-            <span className="agenda-status">Programação a anunciar</span>
+            <div>
+              <p className="eyebrow dark">Cultura e agenda</p>
+              <h2 id="culture-title">A cultura<br />continua.</h2>
+            </div>
+            <div className="culture-intro-copy">
+              <p>Um espaço editorial permanente para acompanhar encontros, experiências e conteúdos que aproximam o património das comunidades.</p>
+              <span className="agenda-status">Agenda editorial 2026</span>
+            </div>
           </div>
           <div className="agenda-list">
-            {agenda.map((item) => (
-              <article key={item.number}>
-                <span>{item.number}</span>
-                <div><p>{item.type}</p><h3>{item.title}</h3><small>{item.detail}</small></div>
-                <i aria-hidden="true">↗</i>
+            {agenda.map((item, index) => (
+              <article className={index === 0 ? "agenda-featured" : ""} key={item.id}>
+                <div className="agenda-media">
+                  <img src={item.image} alt="" loading="lazy" />
+                </div>
+                <div className="agenda-card-content">
+                  <div className="agenda-card-meta"><span>{item.number}</span><p>{item.type}</p></div>
+                  <h3>{item.title}</h3>
+                  <small>{item.detail}</small>
+                  <div className="agenda-card-footer"><strong>{item.status}</strong><i aria-hidden="true">↗</i></div>
+                </div>
               </article>
             ))}
           </div>
@@ -309,16 +246,19 @@ export default function Home() {
             <h2 id="documents-title">Conhecimento<br />para consultar.</h2>
           </div>
           <div className="document-list">
-            <a href="/documents/relatorio-banco-imagens-tchitundo.pdf" download>
-              <span>PDF</span>
-              <div><strong>Relatório do banco de imagens</strong><small>Documento institucional · 2,6 MB</small></div>
-              <i aria-hidden="true">↓</i>
-            </a>
-            <div className="document-coming">
-              <span>PDF</span>
-              <div><strong>Dossier Tchitundo-Hulo</strong><small>Publicação editorial · Brevemente</small></div>
-              <i aria-hidden="true">—</i>
-            </div>
+            {documents.map((item) => item.available && item.href ? (
+              <a href={item.href} download key={item.id}>
+                <span>PDF</span>
+                <div><strong>{item.title}</strong><small>{item.detail}</small></div>
+                <i aria-hidden="true">↓</i>
+              </a>
+            ) : (
+              <div className="document-coming" key={item.id}>
+                <span>PDF</span>
+                <div><strong>{item.title}</strong><small>{item.detail}</small></div>
+                <i aria-hidden="true">Breve</i>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -330,7 +270,7 @@ export default function Home() {
         </div>
         <div className="archive-grid shell">
           {archive.map((item) => (
-            <article className={item.active ? "active" : ""} key={item.title}>
+            <article className={item.active ? "active" : ""} key={item.id}>
               <span>{item.year}</span>
               <div><small>{item.tag}</small><h3>{item.title}</h3></div>
               <i aria-hidden="true">{item.active ? "→" : "+"}</i>
@@ -371,12 +311,28 @@ export default function Home() {
       </div>
 
       {selectedImage && (
-        <div className="lightbox" role="dialog" aria-modal="true" aria-label={selectedImage.label} onClick={() => setSelectedImage(null)}>
-          <button type="button" onClick={() => setSelectedImage(null)} aria-label="Fechar imagem">×</button>
+        <div className="lightbox" role="dialog" aria-modal="true" aria-label={selectedImage.label} onClick={() => setSelectedIndex(null)}>
+          <button className="lightbox-close" type="button" onClick={() => setSelectedIndex(null)} aria-label="Fechar imagem">×</button>
+          <button
+            className="gallery-nav gallery-nav-prev"
+            type="button"
+            onClick={(event) => { event.stopPropagation(); moveGallery(-1); }}
+            aria-label="Imagem anterior"
+          >
+            ←
+          </button>
           <figure onClick={(event) => event.stopPropagation()} onContextMenu={(event) => event.preventDefault()}>
             <img src={selectedImage.src} alt={selectedImage.alt} draggable={false} />
-            <figcaption>{selectedImage.label}</figcaption>
+            <figcaption><span>{selectedImage.label}</span><b>{String((selectedIndex ?? 0) + 1).padStart(2, "0")} / {String(gallery.length).padStart(2, "0")}</b></figcaption>
           </figure>
+          <button
+            className="gallery-nav gallery-nav-next"
+            type="button"
+            onClick={(event) => { event.stopPropagation(); moveGallery(1); }}
+            aria-label="Imagem seguinte"
+          >
+            →
+          </button>
         </div>
       )}
 
