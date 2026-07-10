@@ -887,3 +887,61 @@ main { background: var(--ink); }
   .document-list > * { grid-template-columns: 48px minmax(0, 1fr) 56px; gap: 12px; }
   .document-coming i { font-size: 9px; text-align: right; text-transform: uppercase; letter-spacing: .08em; }
 }
+
+/* Mobile clarity: clean portal marks and captions outside the photographs. */
+@media (max-width: 760px) {
+  .hero-portals {
+    background: #061824;
+    backdrop-filter: none;
+  }
+  .hero-portals a { background: #061824; }
+  .portal-mark {
+    background-color: #061824;
+    background-blend-mode: lighten;
+    mix-blend-mode: normal;
+    filter: none;
+  }
+
+  .gallery-item {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) 64px;
+  }
+  .gallery-item::after { display: none; }
+  .gallery-item > span {
+    position: static;
+    inset: auto;
+    min-width: 0;
+    min-height: 64px;
+    padding: 0 18px;
+    background: #061824;
+    border-top: 1px solid rgba(240,90,42,.5);
+    color: #fff;
+    font-size: 12px;
+    line-height: 1.3;
+  }
+  .gallery-item > span i,
+  .gallery-item > span b { flex: 0 0 auto; }
+}
+
+@media (max-width: 440px) {
+  .gallery-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    grid-auto-rows: auto;
+    gap: 16px;
+  }
+  .gallery-item:nth-child(n) {
+    grid-column: 1;
+    grid-row: auto;
+    min-height: 0;
+    grid-template-rows: auto 62px;
+  }
+  .gallery-item img { height: auto; aspect-ratio: 4 / 3; }
+  .gallery-item.wide img { aspect-ratio: 16 / 10; }
+  .gallery-item.tall img { aspect-ratio: 4 / 5; }
+  .gallery-item > span {
+    min-height: 62px;
+    padding-inline: 16px;
+    font-size: 12px;
+  }
+}
