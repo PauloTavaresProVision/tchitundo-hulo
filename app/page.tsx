@@ -85,9 +85,9 @@ export default function Home() {
 
         <div className="hero-content shell" id="conteudo">
           <p className="eyebrow">Património <i /> Angola <i /> Futuro</p>
-          <h1 id="hero-title" aria-label="Tchitundo-Hulo">
-            <span aria-hidden="true">Tchitundo-</span>
-            <span className="hero-title-bottom" aria-hidden="true">-Hulo</span>
+          <h1 id="hero-title" className="hero-title-art">
+            <span className="sr-only">Tchitundo-Hulo</span>
+            <img src="/media/tchitundo-hulo-lettering-transparent.png" alt="" aria-hidden="true" />
           </h1>
           <div className="incision-rule" aria-hidden="true"><span>||||</span></div>
           <p className="hero-lead">Marcas na pedra. Memória viva.</p>
