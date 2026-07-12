@@ -32,7 +32,22 @@ export type CampaignArchiveItem = {
   active?: boolean;
 };
 
-export const siteContent = {
+export type PortalItem = {
+  id: string;
+  label: string;
+  href: string;
+  mark: "agenda" | "campaign" | "place";
+};
+
+export type SiteContent = {
+  portals: PortalItem[];
+  gallery: GalleryItem[];
+  agenda: AgendaItem[];
+  documents: DocumentItem[];
+  archive: CampaignArchiveItem[];
+};
+
+export const siteContent: SiteContent = {
   portals: [
     { id: "agenda", label: "Agenda cultural", href: "#cultura", mark: "agenda" },
     { id: "campaign", label: "A campanha", href: "#campanha", mark: "campaign" },
@@ -160,4 +175,3 @@ export const siteContent = {
     { id: "community-impact", year: "Arquivo", title: "Comunidade e impacto", tag: "Iniciativas institucionais" },
   ] satisfies CampaignArchiveItem[],
 };
-

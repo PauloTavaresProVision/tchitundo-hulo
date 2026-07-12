@@ -22,9 +22,13 @@ COPY --from=builder --chown=node:node /app/package.json /app/package-lock.json .
 COPY --from=builder --chown=node:node /app/node_modules ./node_modules
 COPY --from=builder --chown=node:node /app/dist ./dist
 
+RUN mkdir -p /app/data/uploads && chown -R node:node /app/data
+
 USER node
 
 EXPOSE 7788
+
+VOLUME ["/app/data"]
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:7788/').then((response) => { if (!response.ok) process.exit(1) }).catch(() => process.exit(1))"

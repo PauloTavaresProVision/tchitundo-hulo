@@ -1,16 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { siteContent } from "@/content/site-content";
-
-const { gallery, agenda, documents, archive, portals } = siteContent;
+import { siteContent, type SiteContent } from "@/content/site-content";
 
 export default function Home() {
+  const [content, setContent] = useState<SiteContent>(siteContent);
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [filmOpen, setFilmOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const { gallery, agenda, documents, archive, portals } = content;
   const selectedImage = selectedIndex === null ? null : gallery[selectedIndex];
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/content", { cache: "no-store", signal: controller.signal })
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error("Content unavailable")))
+      .then((nextContent: SiteContent) => setContent(nextContent))
+      .catch((error) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      });
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     const onScroll = () => {
@@ -43,7 +54,7 @@ export default function Home() {
       document.body.style.overflow = "";
       window.removeEventListener("keydown", onKey);
     };
-  }, [selectedIndex, filmOpen, menuOpen]);
+  }, [selectedIndex, filmOpen, menuOpen, gallery.length]);
 
   const closeMenu = () => setMenuOpen(false);
   const moveGallery = (direction: -1 | 1) => {

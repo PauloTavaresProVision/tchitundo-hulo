@@ -112,3 +112,25 @@ actions tied to the current ChatGPT user. Leave public content anonymous.
 
 - [vinext Documentation](https://github.com/cloudflare/vinext)
 - [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+# Tchitundo-Hulo · Standard Bank Angola
+
+Website editorial institucional com backoffice integrado e execução em Docker na porta `7788`.
+
+## Backoffice
+
+O backoffice está disponível em `/admin` e permite gerir:
+
+- Agenda cultural
+- Galeria e respectivos uploads
+- Documentos PDF
+- Arquivo de campanhas
+
+Copie `.env.example` para `.env` e substitua os três valores por credenciais seguras antes de iniciar o contentor. Os conteúdos e uploads ficam guardados no volume Docker `tchitundo_content`, sobrevivendo a reinícios e actualizações da imagem.
+
+```bash
+docker compose up -d --build
+```
+
+Website: `http://servidor:7788/`
+
+Backoffice: `http://servidor:7788/admin`
