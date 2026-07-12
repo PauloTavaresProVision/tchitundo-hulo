@@ -39,7 +39,17 @@ export type PortalItem = {
   mark: "agenda" | "campaign" | "place";
 };
 
+export type SeoSettings = {
+  title: string;
+  description: string;
+  keywords: string;
+  canonicalUrl: string;
+  ogImage: string;
+  indexable: boolean;
+};
+
 export type SiteContent = {
+  seo: SeoSettings;
   portals: PortalItem[];
   gallery: GalleryItem[];
   agenda: AgendaItem[];
@@ -48,6 +58,14 @@ export type SiteContent = {
 };
 
 export const siteContent: SiteContent = {
+  seo: {
+    title: "Tchitundo-Hulo | Standard Bank Angola",
+    description: "Uma plataforma editorial dedicada ao património, à memória e ao futuro de Angola.",
+    keywords: "Tchitundo-Hulo, património cultural, Angola, arte rupestre, Standard Bank Angola",
+    canonicalUrl: "",
+    ogImage: "/og.png",
+    indexable: true,
+  },
   portals: [
     { id: "agenda", label: "Agenda cultural", href: "#cultura", mark: "agenda" },
     { id: "campaign", label: "A campanha", href: "#campanha", mark: "campaign" },

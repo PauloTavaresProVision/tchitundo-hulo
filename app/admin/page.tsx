@@ -2,20 +2,22 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import type { AgendaItem, CampaignArchiveItem, DocumentItem, GalleryItem, SiteContent } from "@/content/site-content";
+import type { AgendaItem, CampaignArchiveItem, DocumentItem, GalleryItem, SeoSettings, SiteContent } from "@/content/site-content";
 import type { PublicBackofficeUser, UserRole } from "@/lib/users-store";
 
-type Tab = "overview" | "agenda" | "gallery" | "documents" | "archive" | "users";
+type Tab = "overview" | "analytics" | "agenda" | "gallery" | "documents" | "archive" | "seo" | "users";
 type Notice = { type: "success" | "error"; message: string } | null;
 type AuthStage = "credentials" | "mfa" | "setup";
 type MfaSetup = { secret: string; uri: string; qrCode: string };
 
 const baseTabs: Array<{ id: Tab; label: string; symbol: string }> = [
   { id: "overview", label: "Visão geral", symbol: "◫" },
+  { id: "analytics", label: "Estatísticas", symbol: "◔" },
   { id: "agenda", label: "Agenda cultural", symbol: "◇" },
   { id: "gallery", label: "Galeria", symbol: "▦" },
   { id: "documents", label: "Documentos", symbol: "▤" },
   { id: "archive", label: "Campanhas", symbol: "◎" },
+  { id: "seo", label: "SEO", symbol: "⌕" },
 ];
 const usersTab = { id: "users" as Tab, label: "Utilizadores", symbol: "♙" };
 
@@ -191,7 +193,7 @@ export default function AdminPage() {
           </div>
           <div className="admin-actions">
             <Link href="/" target="_blank" rel="noreferrer">Ver website ↗</Link>
-            {activeTab !== "users" && <button className="primary" onClick={save} disabled={saving}>{saving ? "A guardar…" : "Guardar alterações"}</button>}
+            {!(["users", "analytics"] as Tab[]).includes(activeTab) && <button className="primary" onClick={save} disabled={saving}>{saving ? "A guardar…" : "Guardar alterações"}</button>}
           </div>
         </header>
 
@@ -199,10 +201,12 @@ export default function AdminPage() {
 
         <section className="admin-workspace">
           {activeTab === "overview" && <Overview content={content} onNavigate={setActiveTab} />}
+          {activeTab === "analytics" && <AnalyticsDashboard />}
           {activeTab === "agenda" && <AgendaEditor items={content.agenda} setContent={setContent} upload={upload} uploading={uploading} />}
           {activeTab === "gallery" && <GalleryEditor items={content.gallery} setContent={setContent} upload={upload} uploading={uploading} />}
           {activeTab === "documents" && <DocumentsEditor items={content.documents} setContent={setContent} upload={upload} uploading={uploading} />}
           {activeTab === "archive" && <ArchiveEditor items={content.archive} setContent={setContent} />}
+          {activeTab === "seo" && <SeoEditor seo={content.seo} setContent={setContent} upload={upload} uploading={uploading} />}
           {activeTab === "users" && role === "admin" && <UsersEditor currentUsername={username} />}
         </section>
       </main>
@@ -314,6 +318,131 @@ function ArchiveEditor({ items, setContent }: Pick<EditorProps<CampaignArchiveIt
       <label className="toggle-field"><input type="checkbox" checked={Boolean(item.active)} onChange={(event) => updateItem(setContent, "archive", index, "active", event.target.checked)} /><span />Campanha em destaque</label>
     </EditorCard>)}
   </Collection>;
+}
+
+type AnalyticsSummary = {
+  periodDays: number;
+  totals: { pageViews: number; sessions: number; averageDurationSeconds: number };
+  daily: Array<{ date: string; pageViews: number; sessions: number; durationSeconds: number }>;
+  sections: Array<{ id: string; totalSeconds: number; entries: number }>;
+  devices: Array<{ name: "desktop" | "tablet" | "mobile"; value: number }>;
+  referrers: Array<{ name: string; value: number }>;
+};
+
+function AnalyticsDashboard() {
+  const [period, setPeriod] = useState(30);
+  const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    fetch(`/api/admin/analytics?days=${period}`, { cache: "no-store" })
+      .then(async (response) => {
+        const result = await response.json() as AnalyticsSummary & { error?: string };
+        if (!response.ok) throw new Error(result.error ?? "Não foi possível carregar as estatísticas.");
+        if (active) setSummary(result);
+      })
+      .catch((reason) => { if (active) setError(reason instanceof Error ? reason.message : "Não foi possível carregar as estatísticas."); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [period]);
+
+  const maxDaily = Math.max(1, ...(summary?.daily.map((item) => item.pageViews) ?? [1]));
+  const maxSection = Math.max(1, ...(summary?.sections.map((item) => item.totalSeconds) ?? [1]));
+  const totalDevices = summary?.devices.reduce((sum, item) => sum + item.value, 0) ?? 0;
+
+  return <div className="analytics-admin">
+    <header className="analytics-heading">
+      <div><p className="admin-kicker">Medição própria e anónima</p><h2>Desempenho do website</h2><p>Visitas, sessões e interesse por secção, sem guardar IP ou utilizar cookies publicitários.</p></div>
+      <label className="admin-field">Período<select value={period} onChange={(event) => { setLoading(true); setError(""); setPeriod(Number(event.target.value)); }}><option value={7}>Últimos 7 dias</option><option value={30}>Últimos 30 dias</option><option value={90}>Últimos 90 dias</option><option value={365}>Último ano</option></select></label>
+    </header>
+    {error && <div className="admin-notice error">{error}</div>}
+    {loading ? <div className="analytics-loading">A calcular estatísticas…</div> : summary && <>
+      <div className="analytics-kpis">
+        <article><span>Visualizações</span><strong>{formatNumber(summary.totals.pageViews)}</strong><small>Páginas abertas no período</small></article>
+        <article><span>Sessões</span><strong>{formatNumber(summary.totals.sessions)}</strong><small>Visitas anónimas distintas</small></article>
+        <article><span>Tempo médio</span><strong>{formatDuration(summary.totals.averageDurationSeconds)}</strong><small>Por sessão</small></article>
+        <article><span>Secção principal</span><strong className="text-value">{sectionLabel(summary.sections[0]?.id)}</strong><small>{formatDuration(summary.sections[0]?.totalSeconds ?? 0)} de atenção</small></article>
+      </div>
+      <div className="analytics-layout">
+        <article className="analytics-panel analytics-traffic">
+          <header><div><p className="admin-kicker">Evolução</p><h3>Visualizações diárias</h3></div><span>{summary.periodDays} dias</span></header>
+          <div className="analytics-bars" aria-label="Gráfico de visualizações diárias">
+            {summary.daily.map((item, index) => <div className="analytics-bar-item" key={item.date} title={`${item.date}: ${item.pageViews} visualizações`}><i style={{ height: `${Math.max(item.pageViews ? 5 : 1, item.pageViews / maxDaily * 100)}%` }} /><span>{(index % Math.max(1, Math.ceil(summary.daily.length / 8)) === 0) ? item.date.slice(5).replace("-", "/") : ""}</span></div>)}
+          </div>
+        </article>
+        <article className="analytics-panel">
+          <header><div><p className="admin-kicker">Atenção</p><h3>Tempo por secção</h3></div></header>
+          <div className="section-ranking">{summary.sections.length ? summary.sections.slice(0, 8).map((item) => <div key={item.id}><div><strong>{sectionLabel(item.id)}</strong><span>{formatDuration(item.totalSeconds)}</span></div><i><b style={{ width: `${item.totalSeconds / maxSection * 100}%` }} /></i></div>) : <p>Ainda não existem dados de permanência.</p>}</div>
+        </article>
+        <article className="analytics-panel">
+          <header><div><p className="admin-kicker">Dispositivos</p><h3>Como visitam</h3></div></header>
+          <div className="device-list">{summary.devices.map((item) => <div key={item.name}><strong>{deviceLabel(item.name)}</strong><span>{item.value} · {totalDevices ? Math.round(item.value / totalDevices * 100) : 0}%</span></div>)}</div>
+        </article>
+        <article className="analytics-panel">
+          <header><div><p className="admin-kicker">Origem</p><h3>Como chegam</h3></div></header>
+          <div className="referrer-list">{summary.referrers.length ? summary.referrers.map((item) => <div key={item.name}><strong>{item.name}</strong><span>{item.value}</span></div>) : <p>Ainda não existem referências externas.</p>}</div>
+        </article>
+      </div>
+    </>}
+  </div>;
+}
+
+function SeoEditor({ seo, setContent, upload, uploading }: { seo: SeoSettings; setContent: React.Dispatch<React.SetStateAction<SiteContent | null>>; upload: (file: File, target: string) => Promise<string | null>; uploading: string | null }) {
+  const update = <K extends keyof SeoSettings>(field: K, value: SeoSettings[K]) => setContent((current) => current ? ({ ...current, seo: { ...current.seo, [field]: value } }) : current);
+  const titleGood = seo.title.length >= 30 && seo.title.length <= 60;
+  const descriptionGood = seo.description.length >= 120 && seo.description.length <= 160;
+
+  return <div className="seo-admin">
+    <header className="seo-heading"><div><p className="admin-kicker">Visibilidade orgânica</p><h2>SEO e partilha social</h2><p>Controle o conteúdo apresentado no Google, redes sociais, sitemap e motores de pesquisa.</p></div><span className={seo.indexable ? "index-status active" : "index-status"}>{seo.indexable ? "Indexação activa" : "Indexação bloqueada"}</span></header>
+    <div className="seo-layout">
+      <div className="seo-fields">
+        <section>
+          <header><span>01</span><div><h3>Resultado de pesquisa</h3><p>Título, descrição e endereço principal da página.</p></div></header>
+          <Field label={`Título SEO · ${seo.title.length}/60`} value={seo.title} onChange={(value) => update("title", value)} />
+          <Field label={`Descrição · ${seo.description.length}/160`} value={seo.description} multiline onChange={(value) => update("description", value)} />
+          <Field label="Palavras-chave separadas por vírgulas" value={seo.keywords} onChange={(value) => update("keywords", value)} />
+          <Field label="URL canónica" value={seo.canonicalUrl} onChange={(value) => update("canonicalUrl", value)} />
+        </section>
+        <section>
+          <header><span>02</span><div><h3>Partilha social</h3><p>Imagem utilizada no WhatsApp, LinkedIn, Facebook e outras plataformas.</p></div></header>
+          {seo.ogImage && <img className="seo-social-preview" src={seo.ogImage} alt="Pré-visualização da imagem de partilha" />}
+          <UploadField label="Imagem de partilha" value={seo.ogImage} busy={uploading === "seo-og-image"} accept="image/*" onUpload={async (file) => { const url = await upload(file, "seo-og-image"); if (url) update("ogImage", url); }} onChange={(value) => update("ogImage", value)} />
+          <small>Formato recomendado: 1200 × 630 px, JPG ou PNG.</small>
+        </section>
+        <section>
+          <header><span>03</span><div><h3>Indexação</h3><p>Controle a presença nos motores de pesquisa.</p></div></header>
+          <label className="toggle-field seo-index-toggle"><input type="checkbox" checked={seo.indexable} onChange={(event) => update("indexable", event.target.checked)} /><span />Permitir indexação pública</label>
+          <p className="seo-help">Esta opção actualiza automaticamente as instruções robots, o sitemap e as meta tags da página.</p>
+        </section>
+      </div>
+      <aside className="seo-preview-column">
+        <div className="google-preview"><p>Pré-visualização Google</p><span>{seo.canonicalUrl || "https://tchitundo-hulo.ao"}</span><h3>{seo.title || "Título da página"}</h3><div>{seo.description || "Descrição da página apresentada nos resultados de pesquisa."}</div></div>
+        <div className="seo-checklist"><p className="admin-kicker">Estado SEO</p><h3>Checklist editorial</h3><ul><li className={titleGood ? "ok" : "warn"}><b>{titleGood ? "✓" : "!"}</b><span><strong>Título</strong><small>{titleGood ? "Comprimento recomendado" : "Utilize entre 30 e 60 caracteres"}</small></span></li><li className={descriptionGood ? "ok" : "warn"}><b>{descriptionGood ? "✓" : "!"}</b><span><strong>Descrição</strong><small>{descriptionGood ? "Comprimento recomendado" : "Utilize entre 120 e 160 caracteres"}</small></span></li><li className={seo.ogImage ? "ok" : "warn"}><b>{seo.ogImage ? "✓" : "!"}</b><span><strong>Imagem social</strong><small>{seo.ogImage ? "Imagem configurada" : "Adicione uma imagem de partilha"}</small></span></li><li className={seo.canonicalUrl ? "ok" : "warn"}><b>{seo.canonicalUrl ? "✓" : "!"}</b><span><strong>URL canónica</strong><small>{seo.canonicalUrl ? "Endereço configurado" : "Será utilizado o endereço actual"}</small></span></li></ul></div>
+      </aside>
+    </div>
+  </div>;
+}
+
+function formatNumber(value: number) {
+  return new Intl.NumberFormat("pt-AO").format(value);
+}
+
+function formatDuration(seconds: number) {
+  if (seconds < 60) return `${Math.round(seconds)}s`;
+  const minutes = Math.floor(seconds / 60);
+  const remainder = Math.round(seconds % 60);
+  return remainder ? `${minutes}m ${remainder}s` : `${minutes}m`;
+}
+
+function sectionLabel(id?: string) {
+  if (!id) return "Sem dados";
+  return ({ inicio: "Hero inicial", campanha: "A campanha", territorio: "O lugar", impacto: "Impacto", galeria: "Galeria", filme: "Vídeos", cultura: "Agenda cultural", documentos: "Documentos", arquivo: "Arquivo" } as Record<string, string>)[id] ?? id;
+}
+
+function deviceLabel(device: "desktop" | "tablet" | "mobile") {
+  return ({ desktop: "Computador", tablet: "Tablet", mobile: "Telemóvel" })[device];
 }
 
 function UsersEditor({ currentUsername }: { currentUsername: string }) {
@@ -435,7 +564,9 @@ function UploadField({ label, value, accept, busy, onChange, onUpload }: { label
   return <div className="upload-field"><Field label={label} value={value} onChange={onChange} /><label className="upload-button">{busy ? "A carregar…" : "Carregar ficheiro"}<input type="file" accept={accept} disabled={busy} onChange={(event) => { const file = event.target.files?.[0]; if (file) onUpload(file); event.target.value = ""; }} /></label></div>;
 }
 
-function updateItem<K extends keyof SiteContent>(setContent: React.Dispatch<React.SetStateAction<SiteContent | null>>, collection: K, index: number, field: string, value: unknown) {
+type ContentCollectionKey = "portals" | "gallery" | "agenda" | "documents" | "archive";
+
+function updateItem<K extends ContentCollectionKey>(setContent: React.Dispatch<React.SetStateAction<SiteContent | null>>, collection: K, index: number, field: string, value: unknown) {
   setContent((current) => {
     if (!current) return current;
     const list = [...current[collection]] as Array<Record<string, unknown>>;
@@ -444,7 +575,7 @@ function updateItem<K extends keyof SiteContent>(setContent: React.Dispatch<Reac
   });
 }
 
-function removeItem<K extends keyof SiteContent>(setContent: React.Dispatch<React.SetStateAction<SiteContent | null>>, collection: K, index: number) {
+function removeItem<K extends ContentCollectionKey>(setContent: React.Dispatch<React.SetStateAction<SiteContent | null>>, collection: K, index: number) {
   setContent((current) => current ? ({ ...current, [collection]: current[collection].filter((_, itemIndex) => itemIndex !== index) } as SiteContent) : current);
 }
 

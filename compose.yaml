@@ -18,6 +18,7 @@ services:
       BACKOFFICE_USERS_PATH: /app/data/users.json
       CONTENT_DATA_PATH: /app/data/content.json
       CONTENT_UPLOADS_DIR: /app/data/uploads
+      ANALYTICS_DATA_PATH: /app/data/analytics.json
     volumes:
       - tchitundo_content:/app/data
 

@@ -16,8 +16,9 @@ export async function readSiteContent(): Promise<SiteContent> {
   try {
     const raw = await readFile(contentPath(), "utf8");
     const value = JSON.parse(raw) as unknown;
-    if (!isSiteContent(value)) throw new Error("Invalid content structure");
-    return value;
+    const normalized = normalizeSiteContent(value);
+    if (!normalized) throw new Error("Invalid content structure");
+    return normalized;
   } catch (error) {
     if (isMissingFile(error)) return defaultSiteContent();
     throw error;
@@ -25,26 +26,38 @@ export async function readSiteContent(): Promise<SiteContent> {
 }
 
 export async function writeSiteContent(value: unknown): Promise<SiteContent> {
-  if (!isSiteContent(value)) throw new Error("Estrutura de conteúdo inválida.");
+  const normalized = normalizeSiteContent(value);
+  if (!normalized || !hasValidSeo(normalized.seo)) throw new Error("Estrutura de conteúdo inválida.");
 
   const target = contentPath();
   await mkdir(path.dirname(target), { recursive: true });
   const temporary = `${target}.${Date.now()}.tmp`;
-  await writeFile(temporary, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+  await writeFile(temporary, `${JSON.stringify(normalized, null, 2)}\n`, "utf8");
   await rename(temporary, target);
-  return value;
+  return normalized;
 }
 
-function isSiteContent(value: unknown): value is SiteContent {
-  if (!isRecord(value)) return false;
-  if (!Array.isArray(value.portals) || !Array.isArray(value.gallery)) return false;
-  if (!Array.isArray(value.agenda) || !Array.isArray(value.documents) || !Array.isArray(value.archive)) return false;
+function normalizeSiteContent(value: unknown): SiteContent | null {
+  if (!isRecord(value)) return null;
+  if (!Array.isArray(value.portals) || !Array.isArray(value.gallery)) return null;
+  if (!Array.isArray(value.agenda) || !Array.isArray(value.documents) || !Array.isArray(value.archive)) return null;
 
-  return value.portals.every((item) => hasStrings(item, ["id", "label", "href", "mark"]))
+  const collectionsAreValid = value.portals.every((item) => hasStrings(item, ["id", "label", "href", "mark"]))
     && value.gallery.every((item) => hasStrings(item, ["id", "src", "alt", "label", "orientation"]))
     && value.agenda.every((item) => hasStrings(item, ["id", "number", "type", "title", "detail", "status", "image"]))
     && value.documents.every((item) => isRecord(item) && hasStrings(item, ["id", "title", "detail"]) && typeof item.available === "boolean")
     && value.archive.every((item) => hasStrings(item, ["id", "year", "title", "tag"]));
+  if (!collectionsAreValid) return null;
+
+  const fallbackSeo = defaultSiteContent().seo;
+  const seo = hasValidSeo(value.seo) ? value.seo : fallbackSeo;
+  return { ...value, seo } as SiteContent;
+}
+
+function hasValidSeo(value: unknown): value is SiteContent["seo"] {
+  return isRecord(value)
+    && hasStrings(value, ["title", "description", "keywords", "canonicalUrl", "ogImage"])
+    && typeof value.indexable === "boolean";
 }
 
 function hasStrings(value: unknown, keys: string[]) {

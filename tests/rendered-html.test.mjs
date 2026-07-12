@@ -67,6 +67,7 @@ test("server-renders the Tchitundo-Hulo campaign", async () => {
   assert.match(html, /standard-bank-logo-white-official\.png/i);
   assert.match(html, /favicon-32x32\.png/i);
   assert.match(html, /apple-touch-icon\.png/i);
+  assert.match(html, /application\/ld\+json/i);
   assert.match(html, /Agenda cultural/i);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
 });
@@ -99,6 +100,7 @@ test("protects the backoffice with MFA, users, managed content and uploads", asy
   process.env.CONTENT_DATA_PATH = path.join(directory, "content.json");
   process.env.CONTENT_UPLOADS_DIR = path.join(directory, "uploads");
   process.env.BACKOFFICE_USERS_PATH = path.join(directory, "users.json");
+  process.env.ANALYTICS_DATA_PATH = path.join(directory, "analytics.json");
   process.env.BACKOFFICE_USERNAME = "editor";
   process.env.BACKOFFICE_PASSWORD = "test-password";
   process.env.BACKOFFICE_SESSION_SECRET = "test-session-secret-with-sufficient-length";
@@ -147,7 +149,9 @@ test("protects the backoffice with MFA, users, managed content and uploads", asy
     const initial = await worker.fetch(new Request("http://localhost/api/admin/content", { headers: { Cookie: cookie } }), runtimeEnv, runtimeContext);
     assert.equal(initial.status, 200);
     const content = await initial.json();
+    assert.equal(content.seo.indexable, true);
     content.agenda[0].title = "Agenda actualizada no backoffice";
+    content.seo.title = "Tchitundo-Hulo: Património Cultural de Angola";
 
     const saved = await worker.fetch(new Request("http://localhost/api/admin/content", {
       method: "PUT",
@@ -170,6 +174,36 @@ test("protects the backoffice with MFA, users, managed content and uploads", asy
     const publicContent = await worker.fetch(new Request("http://localhost/api/content"), runtimeEnv, runtimeContext);
     assert.equal(publicContent.status, 200);
     assert.equal((await publicContent.json()).agenda[0].title, "Agenda actualizada no backoffice");
+
+    const analyticsHeaders = { "Content-Type": "application/json", Origin: "http://localhost" };
+    const visit = await worker.fetch(new Request("http://localhost/api/analytics/visit", {
+      method: "POST",
+      headers: analyticsHeaders,
+      body: JSON.stringify({ sessionId: "anonymous-session-2026", device: "mobile", referrer: "Directo" }),
+    }), runtimeEnv, runtimeContext);
+    assert.equal(visit.status, 204);
+
+    const engagement = await worker.fetch(new Request("http://localhost/api/analytics/engagement", {
+      method: "POST",
+      headers: analyticsHeaders,
+      body: JSON.stringify({ sessionId: "anonymous-session-2026", totalDurationMs: 45000, sectionDurations: { galeria: 30000 }, sectionEntries: ["galeria"] }),
+    }), runtimeEnv, runtimeContext);
+    assert.equal(engagement.status, 204);
+
+    const analytics = await worker.fetch(new Request("http://localhost/api/admin/analytics?days=30", { headers: { Cookie: cookie } }), runtimeEnv, runtimeContext);
+    assert.equal(analytics.status, 200);
+    const analyticsSummary = await analytics.json();
+    assert.equal(analyticsSummary.totals.pageViews, 1);
+    assert.equal(analyticsSummary.totals.sessions, 1);
+    assert.equal(analyticsSummary.sections[0].id, "galeria");
+
+    const robots = await worker.fetch(new Request("http://localhost/robots.txt"), runtimeEnv, runtimeContext);
+    assert.equal(robots.status, 200);
+    assert.match(await robots.text(), /Disallow: \/admin/);
+
+    const sitemap = await worker.fetch(new Request("http://localhost/sitemap.xml"), runtimeEnv, runtimeContext);
+    assert.equal(sitemap.status, 200);
+    assert.match(await sitemap.text(), /<urlset/);
 
     const createdUser = await worker.fetch(new Request("http://localhost/api/admin/users", {
       method: "POST",
