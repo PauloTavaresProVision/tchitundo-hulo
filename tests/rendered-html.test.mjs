@@ -42,6 +42,8 @@ test("server-renders the Tchitundo-Hulo campaign", async () => {
   assert.match(html, /Tchitundo-/i);
   assert.match(html, /Marcas na pedra\. Memória viva\./i);
   assert.match(html, /standard-bank-logo-white-official\.png/i);
+  assert.match(html, /favicon-32x32\.png/i);
+  assert.match(html, /apple-touch-icon\.png/i);
   assert.match(html, /Agenda cultural/i);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
 });
