@@ -15,6 +15,7 @@ services:
       BACKOFFICE_USERNAME: ${BACKOFFICE_USERNAME:-}
       BACKOFFICE_PASSWORD: ${BACKOFFICE_PASSWORD:-}
       BACKOFFICE_SESSION_SECRET: ${BACKOFFICE_SESSION_SECRET:-}
+      BACKOFFICE_USERS_PATH: /app/data/users.json
       CONTENT_DATA_PATH: /app/data/content.json
       CONTENT_UPLOADS_DIR: /app/data/uploads
     volumes:

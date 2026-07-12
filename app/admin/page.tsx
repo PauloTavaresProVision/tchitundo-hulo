@@ -3,28 +3,36 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { AgendaItem, CampaignArchiveItem, DocumentItem, GalleryItem, SiteContent } from "@/content/site-content";
+import type { PublicBackofficeUser, UserRole } from "@/lib/users-store";
 
-type Tab = "overview" | "agenda" | "gallery" | "documents" | "archive";
+type Tab = "overview" | "agenda" | "gallery" | "documents" | "archive" | "users";
 type Notice = { type: "success" | "error"; message: string } | null;
+type AuthStage = "credentials" | "mfa" | "setup";
+type MfaSetup = { secret: string; uri: string; qrCode: string };
 
-const tabs: Array<{ id: Tab; label: string; symbol: string }> = [
+const baseTabs: Array<{ id: Tab; label: string; symbol: string }> = [
   { id: "overview", label: "Visão geral", symbol: "◫" },
   { id: "agenda", label: "Agenda cultural", symbol: "◇" },
   { id: "gallery", label: "Galeria", symbol: "▦" },
   { id: "documents", label: "Documentos", symbol: "▤" },
   { id: "archive", label: "Campanhas", symbol: "◎" },
 ];
+const usersTab = { id: "users" as Tab, label: "Utilizadores", symbol: "♙" };
 
 export default function AdminPage() {
   const [booting, setBooting] = useState(true);
   const [configured, setConfigured] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
+  const [role, setRole] = useState<UserRole>("editor");
+  const [authStage, setAuthStage] = useState<AuthStage>("credentials");
+  const [mfaSetup, setMfaSetup] = useState<MfaSetup | null>(null);
   const [content, setContent] = useState<SiteContent | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
   const [notice, setNotice] = useState<Notice>(null);
+  const tabs = role === "admin" ? [...baseTabs, usersTab] : baseTabs;
 
   const loadContent = useCallback(async () => {
     const response = await fetch("/api/admin/content", { cache: "no-store" });
@@ -38,10 +46,13 @@ export default function AdminPage() {
   const bootstrap = useCallback(async () => {
     try {
       const response = await fetch("/api/admin/session", { cache: "no-store" });
-      const state = await response.json() as { authenticated: boolean; configured: boolean; username?: string };
+      const state = await response.json() as { authenticated: boolean; configured: boolean; stage?: AuthStage | "authenticated"; username?: string; role?: UserRole; setup?: MfaSetup };
       setConfigured(state.configured);
       setAuthenticated(state.authenticated);
       setUsername(state.username ?? "");
+      setRole(state.role ?? "editor");
+      setAuthStage(state.stage === "mfa" || state.stage === "setup" ? state.stage : "credentials");
+      setMfaSetup(state.setup ?? null);
       if (state.authenticated) await loadContent();
     } finally {
       setBooting(false);
@@ -61,20 +72,51 @@ export default function AdminPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: form.get("username"), password: form.get("password") }),
     });
-    const result = await response.json() as { error?: string; username?: string };
+    const result = await response.json() as { error?: string; username?: string; stage?: AuthStage; setup?: MfaSetup };
     if (!response.ok) {
       setNotice({ type: "error", message: result.error ?? "Não foi possível iniciar sessão." });
       return;
     }
-    setAuthenticated(true);
     setUsername(result.username ?? String(form.get("username") ?? ""));
+    setAuthStage(result.stage ?? "mfa");
+    setMfaSetup(result.setup ?? null);
+  }
+
+  async function verifyMfa(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setNotice(null);
+    const form = new FormData(event.currentTarget);
+    const response = await fetch("/api/admin/mfa", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: form.get("code") }),
+    });
+    const result = await response.json() as { error?: string; username?: string; role?: UserRole };
+    if (!response.ok) {
+      setNotice({ type: "error", message: result.error ?? "Código inválido." });
+      return;
+    }
+    setAuthenticated(true);
+    setUsername(result.username ?? username);
+    setRole(result.role ?? "editor");
+    setAuthStage("credentials");
+    setMfaSetup(null);
     await loadContent();
+  }
+
+  async function restartLogin() {
+    await fetch("/api/admin/session", { method: "DELETE" });
+    setAuthStage("credentials");
+    setMfaSetup(null);
+    setNotice(null);
   }
 
   async function logout() {
     await fetch("/api/admin/session", { method: "DELETE" });
     setAuthenticated(false);
     setContent(null);
+    setAuthStage("credentials");
+    setMfaSetup(null);
     setNotice(null);
   }
 
@@ -117,7 +159,7 @@ export default function AdminPage() {
   }
 
   if (booting) return <AdminLoading />;
-  if (!authenticated) return <AdminLogin configured={configured} notice={notice} onSubmit={login} />;
+  if (!authenticated) return <AdminLogin configured={configured} stage={authStage} setup={mfaSetup} notice={notice} onSubmit={login} onVerify={verifyMfa} onBack={restartLogin} />;
   if (!content) return <AdminLoading />;
 
   return (
@@ -136,7 +178,7 @@ export default function AdminPage() {
         </nav>
         <div className="admin-user">
           <span>{username.slice(0, 1).toUpperCase()}</span>
-          <div><strong>{username}</strong><small>Administrador</small></div>
+          <div><strong>{username}</strong><small>{role === "admin" ? "Administrador" : "Editor"}</small></div>
           <button onClick={logout} aria-label="Terminar sessão">↗</button>
         </div>
       </aside>
@@ -149,7 +191,7 @@ export default function AdminPage() {
           </div>
           <div className="admin-actions">
             <Link href="/" target="_blank" rel="noreferrer">Ver website ↗</Link>
-            <button className="primary" onClick={save} disabled={saving}>{saving ? "A guardar…" : "Guardar alterações"}</button>
+            {activeTab !== "users" && <button className="primary" onClick={save} disabled={saving}>{saving ? "A guardar…" : "Guardar alterações"}</button>}
           </div>
         </header>
 
@@ -161,13 +203,14 @@ export default function AdminPage() {
           {activeTab === "gallery" && <GalleryEditor items={content.gallery} setContent={setContent} upload={upload} uploading={uploading} />}
           {activeTab === "documents" && <DocumentsEditor items={content.documents} setContent={setContent} upload={upload} uploading={uploading} />}
           {activeTab === "archive" && <ArchiveEditor items={content.archive} setContent={setContent} />}
+          {activeTab === "users" && role === "admin" && <UsersEditor currentUsername={username} />}
         </section>
       </main>
     </div>
   );
 }
 
-function AdminLogin({ configured, notice, onSubmit }: { configured: boolean; notice: Notice; onSubmit: (event: React.FormEvent<HTMLFormElement>) => void }) {
+function AdminLogin({ configured, stage, setup, notice, onSubmit, onVerify, onBack }: { configured: boolean; stage: AuthStage; setup: MfaSetup | null; notice: Notice; onSubmit: (event: React.FormEvent<HTMLFormElement>) => void; onVerify: (event: React.FormEvent<HTMLFormElement>) => void; onBack: () => void }) {
   return (
     <main className="admin-login-page">
       <section className="admin-login-art">
@@ -175,16 +218,26 @@ function AdminLogin({ configured, notice, onSubmit }: { configured: boolean; not
         <div><p>Plataforma editorial</p><h1>Tchitundo-Hulo</h1><span>Património · Identidade · Futuro</span></div>
       </section>
       <section className="admin-login-panel">
-        <form onSubmit={onSubmit}>
-          <p className="admin-kicker">Área reservada</p>
-          <h2>Bem-vindo ao backoffice</h2>
-          <p>Gira conteúdos, imagens, documentos e a agenda cultural da plataforma.</p>
+        <form onSubmit={stage === "credentials" ? onSubmit : onVerify}>
+          <p className="admin-kicker">Área reservada · acesso protegido</p>
+          <h2>{stage === "credentials" ? "Bem-vindo ao backoffice" : stage === "setup" ? "Active a dupla autenticação" : "Confirme a sua identidade"}</h2>
+          <p>{stage === "credentials" ? "Gira conteúdos, imagens, documentos e a agenda cultural da plataforma." : stage === "setup" ? "Digitalize o QR code com o Google Authenticator ou Microsoft Authenticator e introduza o código gerado." : "Introduza o código de 6 dígitos apresentado na sua aplicação Authenticator."}</p>
           {!configured && <div className="admin-notice error">Configure BACKOFFICE_USERNAME, BACKOFFICE_PASSWORD e BACKOFFICE_SESSION_SECRET no servidor.</div>}
           {notice && <div className={`admin-notice ${notice.type}`}>{notice.message}</div>}
-          <label>Utilizador<input name="username" autoComplete="username" required /></label>
-          <label>Palavra-passe<input name="password" type="password" autoComplete="current-password" required /></label>
-          <button className="primary" type="submit" disabled={!configured}>Entrar</button>
-          <small>A sessão expira automaticamente após 8 horas.</small>
+          {stage === "credentials" ? <>
+            <label>Utilizador<input name="username" autoComplete="username" required /></label>
+            <label>Palavra-passe<input name="password" type="password" autoComplete="current-password" required /></label>
+            <button className="primary" type="submit" disabled={!configured}>Continuar</button>
+          </> : <>
+            {stage === "setup" && setup && <div className="mfa-setup">
+              <img src={setup.qrCode} alt="QR code para configurar a aplicação Authenticator" />
+              <div><span>Chave manual</span><code>{setup.secret}</code></div>
+            </div>}
+            <label>Código de autenticação<input className="mfa-code" name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} placeholder="000000" required autoFocus /></label>
+            <button className="primary" type="submit">{stage === "setup" ? "Activar e entrar" : "Confirmar e entrar"}</button>
+            <button className="login-back" type="button" onClick={onBack}>← Voltar ao login</button>
+          </>}
+          <small>Palavra-passe e código Authenticator são obrigatórios. A sessão expira após 8 horas.</small>
         </form>
       </section>
     </main>
@@ -261,6 +314,102 @@ function ArchiveEditor({ items, setContent }: Pick<EditorProps<CampaignArchiveIt
       <label className="toggle-field"><input type="checkbox" checked={Boolean(item.active)} onChange={(event) => updateItem(setContent, "archive", index, "active", event.target.checked)} /><span />Campanha em destaque</label>
     </EditorCard>)}
   </Collection>;
+}
+
+function UsersEditor({ currentUsername }: { currentUsername: string }) {
+  const [users, setUsers] = useState<PublicBackofficeUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState<Notice>(null);
+  const [creating, setCreating] = useState(false);
+
+  const loadUsers = useCallback(async () => {
+    const response = await fetch("/api/admin/users", { cache: "no-store" });
+    const result = await response.json() as { users?: PublicBackofficeUser[]; error?: string };
+    if (!response.ok) setMessage({ type: "error", message: result.error ?? "Não foi possível carregar os utilizadores." });
+    else setUsers(result.users ?? []);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/admin/users", { cache: "no-store" })
+      .then(async (response) => ({ response, result: await response.json() as { users?: PublicBackofficeUser[]; error?: string } }))
+      .then(({ response, result }) => {
+        if (!active) return;
+        if (!response.ok) setMessage({ type: "error", message: result.error ?? "Não foi possível carregar os utilizadores." });
+        else setUsers(result.users ?? []);
+        setLoading(false);
+      });
+    return () => { active = false; };
+  }, []);
+
+  async function create(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setCreating(true);
+    setMessage(null);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    const response = await fetch("/api/admin/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: form.get("username"), displayName: form.get("displayName"), email: form.get("email"), role: form.get("role"), password: form.get("password") }),
+    });
+    const result = await response.json() as { error?: string };
+    if (!response.ok) setMessage({ type: "error", message: result.error ?? "Não foi possível criar o utilizador." });
+    else {
+      formElement.reset();
+      setMessage({ type: "success", message: "Utilizador criado. No primeiro acesso terá de configurar o Authenticator." });
+      await loadUsers();
+    }
+    setCreating(false);
+  }
+
+  async function changeUser(id: string, body: Record<string, unknown>, successMessage: string) {
+    setMessage(null);
+    const response = await fetch(`/api/admin/users/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const result = await response.json() as { error?: string };
+    if (!response.ok) setMessage({ type: "error", message: result.error ?? "Não foi possível actualizar o utilizador." });
+    else {
+      setMessage({ type: "success", message: successMessage });
+      await loadUsers();
+    }
+  }
+
+  async function remove(user: PublicBackofficeUser) {
+    if (!window.confirm(`Eliminar permanentemente o utilizador ${user.username}?`)) return;
+    const response = await fetch(`/api/admin/users/${user.id}`, { method: "DELETE" });
+    if (!response.ok) {
+      const result = await response.json() as { error?: string };
+      setMessage({ type: "error", message: result.error ?? "Não foi possível eliminar o utilizador." });
+      return;
+    }
+    setMessage({ type: "success", message: "Utilizador eliminado." });
+    await loadUsers();
+  }
+
+  return <div className="users-admin">
+    <header><div><h2>Utilizadores e segurança</h2><p>Crie acessos, atribua perfis e controle a dupla autenticação.</p></div><span className="security-badge">MFA obrigatório</span></header>
+    {message && <div className={`admin-notice ${message.type}`}>{message.message}</div>}
+    <form className="new-user-form" onSubmit={create}>
+      <div><p className="admin-kicker">Novo acesso</p><h3>Criar utilizador</h3></div>
+      <label className="admin-field">Nome<input name="displayName" required /></label>
+      <label className="admin-field">Utilizador<input name="username" pattern="[A-Za-z0-9._-]+" required /></label>
+      <label className="admin-field">Email<input name="email" type="email" /></label>
+      <label className="admin-field">Perfil<select name="role" defaultValue="editor"><option value="editor">Editor</option><option value="admin">Administrador</option></select></label>
+      <label className="admin-field">Palavra-passe temporária<input name="password" type="password" minLength={12} required /></label>
+      <button className="primary" disabled={creating}>{creating ? "A criar…" : "Criar utilizador"}</button>
+    </form>
+    <div className="users-list">
+      <div className="users-list-head"><span>Utilizador</span><span>Perfil</span><span>Segurança</span><span>Estado</span><span /></div>
+      {loading ? <p className="users-loading">A carregar utilizadores…</p> : users.map((user) => <article key={user.id}>
+        <div className="user-identity"><i>{user.displayName.slice(0, 1).toUpperCase()}</i><div><strong>{user.displayName}</strong><span>@{user.username}{user.username === currentUsername ? " · sessão actual" : ""}</span>{user.email && <small>{user.email}</small>}</div></div>
+        <select value={user.role} disabled={user.username === currentUsername} onChange={(event) => void changeUser(user.id, { role: event.target.value }, "Perfil actualizado.")}><option value="editor">Editor</option><option value="admin">Administrador</option></select>
+        <div className={`mfa-status ${user.mfaEnabled ? "enabled" : "pending"}`}><b>{user.mfaEnabled ? "Protegido" : "Pendente"}</b><span>{user.mfaEnabled ? "Authenticator activo" : "Configura no próximo login"}</span></div>
+        <label className="user-active"><input type="checkbox" checked={user.active} disabled={user.username === currentUsername} onChange={(event) => void changeUser(user.id, { active: event.target.checked }, event.target.checked ? "Utilizador activado." : "Utilizador desactivado.")} /><span />{user.active ? "Activo" : "Inactivo"}</label>
+        <div className="user-actions"><button onClick={() => void changeUser(user.id, { resetMfa: true }, "Dupla autenticação reposta. Será configurada no próximo login.")}>Repor MFA</button><button className="danger" disabled={user.username === currentUsername} onClick={() => void remove(user)}>Eliminar</button></div>
+      </article>)}
+    </div>
+  </div>;
 }
 
 type EditorProps<T> = {

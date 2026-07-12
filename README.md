@@ -124,8 +124,12 @@ O backoffice está disponível em `/admin` e permite gerir:
 - Galeria e respectivos uploads
 - Documentos PDF
 - Arquivo de campanhas
+- Utilizadores com perfis de Administrador e Editor
+- Dupla autenticação obrigatória através de Google Authenticator ou Microsoft Authenticator
 
 Copie `.env.example` para `.env` e substitua os três valores por credenciais seguras antes de iniciar o contentor. Os conteúdos e uploads ficam guardados no volume Docker `tchitundo_content`, sobrevivendo a reinícios e actualizações da imagem.
+
+No primeiro acesso, o administrador definido no `.env` é criado automaticamente. Depois da palavra-passe, o backoffice apresenta um QR code que deve ser lido numa aplicação Authenticator. A conta só fica activa depois da confirmação do primeiro código de 6 dígitos. Novos utilizadores são criados na área **Utilizadores** e seguem o mesmo processo.
 
 ```bash
 docker compose up -d --build

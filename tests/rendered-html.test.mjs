@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHmac } from "node:crypto";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -30,6 +31,28 @@ async function render() {
     runtimeEnv,
     runtimeContext,
   );
+}
+
+function totpCode(secret) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  let bits = 0;
+  let buffer = 0;
+  const output = [];
+  for (const character of secret) {
+    buffer = (buffer << 5) | alphabet.indexOf(character);
+    bits += 5;
+    if (bits >= 8) {
+      output.push((buffer >>> (bits - 8)) & 0xff);
+      bits -= 8;
+    }
+  }
+  const counter = Math.floor(Date.now() / 1000 / 30);
+  const counterBytes = Buffer.alloc(8);
+  counterBytes.writeBigUInt64BE(BigInt(counter));
+  const digest = createHmac("sha1", Buffer.from(output)).update(counterBytes).digest();
+  const offset = digest[digest.length - 1] & 0x0f;
+  const value = ((digest[offset] & 0x7f) << 24) | ((digest[offset + 1] & 0xff) << 16) | ((digest[offset + 2] & 0xff) << 8) | (digest[offset + 3] & 0xff);
+  return String(value % 1_000_000).padStart(6, "0");
 }
 
 test("server-renders the Tchitundo-Hulo campaign", async () => {
@@ -71,10 +94,11 @@ test("keeps the campaign CMS-ready and Docker-ready on port 7788", async () => {
   assert.match(page, /fetch\("\/api\/content"/);
 });
 
-test("protects the backoffice and persists managed content and uploads", async () => {
+test("protects the backoffice with MFA, users, managed content and uploads", async () => {
   const directory = await mkdtemp(path.join(tmpdir(), "tchitundo-backoffice-"));
   process.env.CONTENT_DATA_PATH = path.join(directory, "content.json");
   process.env.CONTENT_UPLOADS_DIR = path.join(directory, "uploads");
+  process.env.BACKOFFICE_USERS_PATH = path.join(directory, "users.json");
   process.env.BACKOFFICE_USERNAME = "editor";
   process.env.BACKOFFICE_PASSWORD = "test-password";
   process.env.BACKOFFICE_SESSION_SECRET = "test-session-secret-with-sufficient-length";
@@ -96,8 +120,29 @@ test("protects the backoffice and persists managed content and uploads", async (
       body: JSON.stringify({ username: "editor", password: "test-password" }),
     }), runtimeEnv, runtimeContext);
     assert.equal(login.status, 200);
-    const cookie = login.headers.get("set-cookie")?.split(";", 1)[0];
-    assert.ok(cookie);
+    const loginState = await login.json();
+    assert.equal(loginState.stage, "setup");
+    assert.match(loginState.setup.qrCode, /^data:image\/png;base64,/);
+    const challengeCookie = login.headers.get("set-cookie")?.split(";", 1)[0];
+    assert.ok(challengeCookie);
+
+    const mfa = await worker.fetch(new Request("http://container:7788/api/admin/mfa", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: challengeCookie,
+        Host: "container:7788",
+        Origin: "https://patrimonio.example.com",
+        "X-Forwarded-Host": "patrimonio.example.com",
+        "X-Forwarded-Proto": "https",
+      },
+      body: JSON.stringify({ code: totpCode(loginState.setup.secret) }),
+    }), runtimeEnv, runtimeContext);
+    assert.equal(mfa.status, 200);
+    const sessionHeader = mfa.headers.get("set-cookie") ?? "";
+    const sessionMatch = sessionHeader.match(/sb_backoffice_session=([^;,\s]+)/);
+    assert.ok(sessionMatch);
+    const cookie = `sb_backoffice_session=${sessionMatch[1]}`;
 
     const initial = await worker.fetch(new Request("http://localhost/api/admin/content", { headers: { Cookie: cookie } }), runtimeEnv, runtimeContext);
     assert.equal(initial.status, 200);
@@ -125,6 +170,14 @@ test("protects the backoffice and persists managed content and uploads", async (
     const publicContent = await worker.fetch(new Request("http://localhost/api/content"), runtimeEnv, runtimeContext);
     assert.equal(publicContent.status, 200);
     assert.equal((await publicContent.json()).agenda[0].title, "Agenda actualizada no backoffice");
+
+    const createdUser = await worker.fetch(new Request("http://localhost/api/admin/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: cookie, Origin: "http://localhost" },
+      body: JSON.stringify({ username: "marketing", displayName: "Equipa de Marketing", email: "marketing@example.com", role: "editor", password: "temporary-password-2026" }),
+    }), runtimeEnv, runtimeContext);
+    assert.equal(createdUser.status, 201);
+    assert.equal((await createdUser.json()).user.mfaEnabled, false);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
