@@ -1,4 +1,6 @@
 import { findUserById, type BackofficeUser, type UserRole } from "@/lib/users-store";
+import { requestProtocol, sameOriginRequest } from "@/lib/request-security";
+import { createStoredSession, readStoredSession, revokeStoredSession } from "@/lib/sessions-store";
 
 const SESSION_COOKIE = "sb_backoffice_session";
 const CHALLENGE_COOKIE = "sb_backoffice_challenge";
@@ -14,21 +16,16 @@ export type SessionPayload = {
 
 export type MfaChallengePayload = {
   userId: string;
-  purpose: "mfa" | "setup";
+  purpose: "mfa" | "setup" | "password";
   expiresAt: number;
 };
 
 export function adminConfigured() {
-  return Boolean(process.env.BACKOFFICE_USERNAME && process.env.BACKOFFICE_PASSWORD && process.env.BACKOFFICE_SESSION_SECRET);
+  return Boolean(process.env.BACKOFFICE_USERNAME && process.env.BACKOFFICE_PASSWORD && (process.env.BACKOFFICE_SESSION_SECRET?.length ?? 0) >= 32);
 }
 
 export async function createAdminSession(user: BackofficeUser) {
-  return createSignedToken({
-    userId: user.id,
-    username: user.username,
-    role: user.role,
-    expiresAt: now() + SESSION_DURATION_SECONDS,
-  } satisfies SessionPayload);
+  return createStoredSession(user.id);
 }
 
 export async function createMfaChallenge(userId: string, purpose: MfaChallengePayload["purpose"]) {
@@ -37,18 +34,24 @@ export async function createMfaChallenge(userId: string, purpose: MfaChallengePa
 
 export async function readAdminSession(request: Request): Promise<SessionPayload | null> {
   const token = readCookie(request.headers.get("cookie"), SESSION_COOKIE);
-  const payload = await readSignedToken<SessionPayload>(token);
-  if (!payload || payload.expiresAt <= now()) return null;
+  const stored = await readStoredSession(token);
+  if (!stored) return null;
+  const user = await findUserById(stored.userId).catch(() => null);
+  if (!user || !user.active || !user.mfaEnabled || user.mustChangePassword) {
+    await revokeStoredSession(token);
+    return null;
+  }
+  return { userId: user.id, username: user.username, role: user.role, expiresAt: stored.expiresAt };
+}
 
-  const user = await findUserById(payload.userId).catch(() => null);
-  if (!user || !user.active || !user.mfaEnabled || user.username !== payload.username || user.role !== payload.role) return null;
-  return payload;
+export async function revokeAdminSession(request: Request) {
+  await revokeStoredSession(readCookie(request.headers.get("cookie"), SESSION_COOKIE));
 }
 
 export async function readMfaChallenge(request: Request): Promise<MfaChallengePayload | null> {
   const token = readCookie(request.headers.get("cookie"), CHALLENGE_COOKIE);
   const payload = await readSignedToken<MfaChallengePayload>(token);
-  if (!payload || payload.expiresAt <= now() || !["mfa", "setup"].includes(payload.purpose)) return null;
+  if (!payload || payload.expiresAt <= now() || !["mfa", "setup", "password"].includes(payload.purpose)) return null;
   return payload;
 }
 
@@ -69,26 +72,7 @@ export function expiredChallengeCookie() {
 }
 
 export function sameOrigin(request: Request) {
-  const originHeader = request.headers.get("origin");
-  if (!originHeader) return true;
-
-  let origin: URL;
-  try {
-    origin = new URL(originHeader);
-  } catch {
-    return false;
-  }
-
-  const forwardedHost = firstForwardedValue(request.headers.get("x-forwarded-host"));
-  const host = firstForwardedValue(request.headers.get("host"));
-  const requestUrl = new URL(request.url);
-  const acceptedHosts = new Set([forwardedHost, host, requestUrl.host].filter(Boolean));
-  const hostMatches = acceptedHosts.has(origin.host);
-
-  const forwardedProtocol = firstForwardedValue(request.headers.get("x-forwarded-proto"));
-  const protocolMatches = !forwardedProtocol || origin.protocol === `${forwardedProtocol}:`;
-  if (hostMatches && protocolMatches) return true;
-  return request.headers.get("sec-fetch-site") === "same-origin";
+  return sameOriginRequest(request);
 }
 
 async function createSignedToken(payload: object) {
@@ -110,17 +94,12 @@ async function readSignedToken<T>(token: string | null): Promise<T | null> {
 }
 
 function cookie(name: string, value: string, maxAge: number, request: Request) {
-  const forwardedProtocol = firstForwardedValue(request.headers.get("x-forwarded-proto"));
-  const secure = forwardedProtocol === "https" || new URL(request.url).protocol === "https:" ? "; Secure" : "";
+  const secure = requestProtocol(request) === "https" ? "; Secure" : "";
   return `${name}=${value}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}${secure}`;
 }
 
 function expiredCookie(name: string) {
   return `${name}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0`;
-}
-
-function firstForwardedValue(value: string | null) {
-  return value?.split(",", 1)[0]?.trim().toLowerCase() || "";
 }
 
 function readCookie(header: string | null, name: string) {

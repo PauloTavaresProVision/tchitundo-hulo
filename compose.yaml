@@ -15,10 +15,25 @@ services:
       BACKOFFICE_USERNAME: ${BACKOFFICE_USERNAME:-}
       BACKOFFICE_PASSWORD: ${BACKOFFICE_PASSWORD:-}
       BACKOFFICE_SESSION_SECRET: ${BACKOFFICE_SESSION_SECRET:-}
+      BACKOFFICE_MFA_ENCRYPTION_KEY: ${BACKOFFICE_MFA_ENCRYPTION_KEY:-}
       BACKOFFICE_USERS_PATH: /app/data/users.json
+      BACKOFFICE_SESSIONS_PATH: /app/data/sessions.json
+      BACKOFFICE_AUDIT_PATH: /app/data/audit.jsonl
       CONTENT_DATA_PATH: /app/data/content.json
       CONTENT_UPLOADS_DIR: /app/data/uploads
       ANALYTICS_DATA_PATH: /app/data/analytics.json
+      APP_ALLOWED_HOSTS: ${APP_ALLOWED_HOSTS:-}
+      TRUST_PROXY_HEADERS: ${TRUST_PROXY_HEADERS:-false}
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    pids_limit: 200
+    mem_limit: 768m
+    cpus: 1.0
     volumes:
       - tchitundo_content:/app/data
 

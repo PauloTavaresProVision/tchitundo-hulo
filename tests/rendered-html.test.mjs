@@ -59,6 +59,9 @@ test("server-renders the Tchitundo-Hulo campaign", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
+  assert.match(response.headers.get("content-security-policy") ?? "", /frame-ancestors 'none'/);
+  assert.equal(response.headers.get("x-frame-options"), "DENY");
+  assert.equal(response.headers.get("x-content-type-options"), "nosniff");
 
   const html = await response.text();
   assert.match(html, /<title>Tchitundo-Hulo \| Standard Bank Angola<\/title>/i);
@@ -100,15 +103,26 @@ test("protects the backoffice with MFA, users, managed content and uploads", asy
   process.env.CONTENT_DATA_PATH = path.join(directory, "content.json");
   process.env.CONTENT_UPLOADS_DIR = path.join(directory, "uploads");
   process.env.BACKOFFICE_USERS_PATH = path.join(directory, "users.json");
+  process.env.BACKOFFICE_SESSIONS_PATH = path.join(directory, "sessions.json");
+  process.env.BACKOFFICE_AUDIT_PATH = path.join(directory, "audit.jsonl");
   process.env.ANALYTICS_DATA_PATH = path.join(directory, "analytics.json");
   process.env.BACKOFFICE_USERNAME = "editor";
   process.env.BACKOFFICE_PASSWORD = "test-password";
   process.env.BACKOFFICE_SESSION_SECRET = "test-session-secret-with-sufficient-length";
+  process.env.BACKOFFICE_MFA_ENCRYPTION_KEY = "separate-test-mfa-encryption-key-with-length";
+  process.env.TRUST_PROXY_HEADERS = "true";
 
   try {
     const worker = await getWorker();
     const unauthorized = await worker.fetch(new Request("http://localhost/api/admin/content"), runtimeEnv, runtimeContext);
     assert.equal(unauthorized.status, 401);
+
+    const missingOrigin = await worker.fetch(new Request("http://localhost/api/admin/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: "editor", password: "test-password" }),
+    }), runtimeEnv, runtimeContext);
+    assert.equal(missingOrigin.status, 403);
 
     const login = await worker.fetch(new Request("http://container:7788/api/admin/session", {
       method: "POST",
@@ -161,7 +175,7 @@ test("protects the backoffice with MFA, users, managed content and uploads", asy
     assert.equal(saved.status, 200);
 
     const form = new FormData();
-    form.set("file", new File([new Uint8Array([137, 80, 78, 71])], "teste.png", { type: "image/png" }));
+    form.set("file", new File([new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10])], "teste.png", { type: "image/png" }));
     const uploaded = await worker.fetch(new Request("http://localhost/api/admin/uploads", {
       method: "POST",
       headers: { Cookie: cookie, Origin: "http://localhost" },
@@ -170,6 +184,15 @@ test("protects the backoffice with MFA, users, managed content and uploads", asy
     assert.equal(uploaded.status, 200);
     const media = await uploaded.json();
     assert.match(media.url, /^\/api\/media\//);
+
+    const spoofedForm = new FormData();
+    spoofedForm.set("file", new File([new TextEncoder().encode("not a png")], "falso.png", { type: "image/png" }));
+    const spoofedUpload = await worker.fetch(new Request("http://localhost/api/admin/uploads", {
+      method: "POST",
+      headers: { Cookie: cookie, Origin: "http://localhost" },
+      body: spoofedForm,
+    }), runtimeEnv, runtimeContext);
+    assert.equal(spoofedUpload.status, 400);
 
     const publicContent = await worker.fetch(new Request("http://localhost/api/content"), runtimeEnv, runtimeContext);
     assert.equal(publicContent.status, 200);
@@ -212,6 +235,44 @@ test("protects the backoffice with MFA, users, managed content and uploads", asy
     }), runtimeEnv, runtimeContext);
     assert.equal(createdUser.status, 201);
     assert.equal((await createdUser.json()).user.mfaEnabled, false);
+
+    const temporaryLogin = await worker.fetch(new Request("http://localhost/api/admin/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Origin: "http://localhost", "Sec-Fetch-Site": "same-origin" },
+      body: JSON.stringify({ username: "marketing", password: "temporary-password-2026" }),
+    }), runtimeEnv, runtimeContext);
+    assert.equal(temporaryLogin.status, 200);
+    assert.equal((await temporaryLogin.clone().json()).stage, "password");
+    const passwordCookie = temporaryLogin.headers.get("set-cookie")?.split(";", 1)[0];
+    assert.ok(passwordCookie);
+    assert.match(passwordCookie, /^sb_backoffice_challenge=/);
+    const passwordChallenge = JSON.parse(Buffer.from(passwordCookie.split("=")[1].split(".")[0], "base64url").toString("utf8"));
+    assert.equal(passwordChallenge.purpose, "password");
+    const challengeToken = passwordCookie.split("=")[1];
+    const [challengePayload, challengeSignature] = challengeToken.split(".");
+    assert.equal(challengeSignature, createHmac("sha256", process.env.BACKOFFICE_SESSION_SECRET).update(challengePayload).digest("base64url"));
+    const passwordState = await worker.fetch(new Request("http://localhost/api/admin/session", { headers: { Cookie: passwordCookie } }), runtimeEnv, runtimeContext);
+    assert.equal((await passwordState.json()).stage, "password");
+    const changedPassword = await worker.fetch(new Request("http://localhost/api/admin/password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: passwordCookie, Origin: "http://localhost" },
+      body: JSON.stringify({ password: "a-new-strong-password-2026", confirmation: "a-new-strong-password-2026" }),
+    }), runtimeEnv, runtimeContext);
+    const changedPasswordBody = await changedPassword.json();
+    assert.equal(changedPassword.status, 200, JSON.stringify(changedPasswordBody));
+    assert.equal(changedPasswordBody.stage, "setup");
+
+    const logout = await worker.fetch(new Request("http://localhost/api/admin/session", {
+      method: "DELETE",
+      headers: { Cookie: cookie, Origin: "http://localhost" },
+    }), runtimeEnv, runtimeContext);
+    assert.equal(logout.status, 200);
+    const revoked = await worker.fetch(new Request("http://localhost/api/admin/content", { headers: { Cookie: cookie } }), runtimeEnv, runtimeContext);
+    assert.equal(revoked.status, 401);
+
+    const auditLog = await readFile(process.env.BACKOFFICE_AUDIT_PATH, "utf8");
+    assert.match(auditLog, /"action":"auth.login"/);
+    assert.match(auditLog, /"action":"content.updated"/);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

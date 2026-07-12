@@ -53,10 +53,10 @@ export async function recordVisit(input: { sessionId: string; device: string; re
   await updateStore((store) => {
     const day = store.days[today()] ?? emptyDay();
     day.pageViews += 1;
-    if (!day.sessionIds.includes(sessionId)) {
+    if (!day.sessionIds.includes(sessionId) && day.sessionIds.length < 50_000) {
       day.sessionIds.push(sessionId);
       day.devices[device] += 1;
-      day.referrers[referrer] = (day.referrers[referrer] ?? 0) + 1;
+      if (day.referrers[referrer] !== undefined || Object.keys(day.referrers).length < 100) day.referrers[referrer] = (day.referrers[referrer] ?? 0) + 1;
     }
     store.days[today()] = day;
   });
@@ -74,6 +74,7 @@ export async function recordEngagement(input: { sessionId: string; totalDuration
       const section = sanitizeSection(rawSection);
       const duration = clampDuration(rawDuration);
       if (!section || duration <= 0) continue;
+      if (day.sections[section] === undefined && Object.keys(day.sections).length >= 100) continue;
       const current = day.sections[section] ?? { totalMs: 0, entries: 0 };
       current.totalMs += duration;
       if (entries.has(section)) current.entries += 1;
@@ -134,17 +135,18 @@ export async function readAnalyticsSummary(periodDays = 30): Promise<AnalyticsSu
 }
 
 async function updateStore(update: (store: AnalyticsStore) => void) {
-  writeQueue = writeQueue.then(async () => {
+  const operation = writeQueue.then(async () => {
     const store = await readStore();
     update(store);
     prune(store);
     const target = analyticsPath();
     await mkdir(path.dirname(target), { recursive: true });
     const temporary = `${target}.${Date.now()}.tmp`;
-    await writeFile(temporary, `${JSON.stringify(store, null, 2)}\n`, "utf8");
+    await writeFile(temporary, `${JSON.stringify(store, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
     await rename(temporary, target);
   });
-  await writeQueue;
+  writeQueue = operation.then(() => undefined, () => undefined);
+  await operation;
 }
 
 async function readStore(): Promise<AnalyticsStore> {

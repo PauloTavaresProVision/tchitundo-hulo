@@ -7,7 +7,7 @@ import type { PublicBackofficeUser, UserRole } from "@/lib/users-store";
 
 type Tab = "overview" | "analytics" | "agenda" | "gallery" | "documents" | "archive" | "seo" | "users";
 type Notice = { type: "success" | "error"; message: string } | null;
-type AuthStage = "credentials" | "mfa" | "setup";
+type AuthStage = "credentials" | "password" | "mfa" | "setup";
 type MfaSetup = { secret: string; uri: string; qrCode: string };
 
 const baseTabs: Array<{ id: Tab; label: string; symbol: string }> = [
@@ -53,7 +53,7 @@ export default function AdminPage() {
       setAuthenticated(state.authenticated);
       setUsername(state.username ?? "");
       setRole(state.role ?? "editor");
-      setAuthStage(state.stage === "mfa" || state.stage === "setup" ? state.stage : "credentials");
+      setAuthStage(state.stage === "mfa" || state.stage === "setup" || state.stage === "password" ? state.stage : "credentials");
       setMfaSetup(state.setup ?? null);
       if (state.authenticated) await loadContent();
     } finally {
@@ -104,6 +104,26 @@ export default function AdminPage() {
     setAuthStage("credentials");
     setMfaSetup(null);
     await loadContent();
+  }
+
+  async function changePassword(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setNotice(null);
+    const form = new FormData(event.currentTarget);
+    const response = await fetch("/api/admin/password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: form.get("newPassword"), confirmation: form.get("confirmation") }),
+    });
+    const result = await response.json() as { error?: string; username?: string; stage?: AuthStage; setup?: MfaSetup };
+    if (!response.ok) {
+      setNotice({ type: "error", message: result.error ?? "Não foi possível alterar a palavra-passe." });
+      return;
+    }
+    setUsername(result.username ?? username);
+    setAuthStage(result.stage ?? "mfa");
+    setMfaSetup(result.setup ?? null);
+    setNotice({ type: "success", message: "Palavra-passe alterada. Complete a autenticação." });
   }
 
   async function restartLogin() {
@@ -161,7 +181,7 @@ export default function AdminPage() {
   }
 
   if (booting) return <AdminLoading />;
-  if (!authenticated) return <AdminLogin configured={configured} stage={authStage} setup={mfaSetup} notice={notice} onSubmit={login} onVerify={verifyMfa} onBack={restartLogin} />;
+  if (!authenticated) return <AdminLogin configured={configured} stage={authStage} setup={mfaSetup} notice={notice} onSubmit={login} onPassword={changePassword} onVerify={verifyMfa} onBack={restartLogin} />;
   if (!content) return <AdminLoading />;
 
   return (
@@ -214,7 +234,7 @@ export default function AdminPage() {
   );
 }
 
-function AdminLogin({ configured, stage, setup, notice, onSubmit, onVerify, onBack }: { configured: boolean; stage: AuthStage; setup: MfaSetup | null; notice: Notice; onSubmit: (event: React.FormEvent<HTMLFormElement>) => void; onVerify: (event: React.FormEvent<HTMLFormElement>) => void; onBack: () => void }) {
+function AdminLogin({ configured, stage, setup, notice, onSubmit, onPassword, onVerify, onBack }: { configured: boolean; stage: AuthStage; setup: MfaSetup | null; notice: Notice; onSubmit: (event: React.FormEvent<HTMLFormElement>) => void; onPassword: (event: React.FormEvent<HTMLFormElement>) => void; onVerify: (event: React.FormEvent<HTMLFormElement>) => void; onBack: () => void }) {
   return (
     <main className="admin-login-page">
       <section className="admin-login-art">
@@ -222,16 +242,21 @@ function AdminLogin({ configured, stage, setup, notice, onSubmit, onVerify, onBa
         <div><p>Plataforma editorial</p><h1>Tchitundo-Hulo</h1><span>Património · Identidade · Futuro</span></div>
       </section>
       <section className="admin-login-panel">
-        <form onSubmit={stage === "credentials" ? onSubmit : onVerify}>
+        <form onSubmit={stage === "credentials" ? onSubmit : stage === "password" ? onPassword : onVerify}>
           <p className="admin-kicker">Área reservada · acesso protegido</p>
-          <h2>{stage === "credentials" ? "Bem-vindo ao backoffice" : stage === "setup" ? "Active a dupla autenticação" : "Confirme a sua identidade"}</h2>
-          <p>{stage === "credentials" ? "Gira conteúdos, imagens, documentos e a agenda cultural da plataforma." : stage === "setup" ? "Digitalize o QR code com o Google Authenticator ou Microsoft Authenticator e introduza o código gerado." : "Introduza o código de 6 dígitos apresentado na sua aplicação Authenticator."}</p>
+          <h2>{stage === "credentials" ? "Bem-vindo ao backoffice" : stage === "password" ? "Defina uma nova palavra-passe" : stage === "setup" ? "Active a dupla autenticação" : "Confirme a sua identidade"}</h2>
+          <p>{stage === "credentials" ? "Gira conteúdos, imagens, documentos e a agenda cultural da plataforma." : stage === "password" ? "Por segurança, a palavra-passe temporária tem de ser substituída antes do primeiro acesso." : stage === "setup" ? "Digitalize o QR code com o Google Authenticator ou Microsoft Authenticator e introduza o código gerado." : "Introduza o código de 6 dígitos apresentado na sua aplicação Authenticator."}</p>
           {!configured && <div className="admin-notice error">Configure BACKOFFICE_USERNAME, BACKOFFICE_PASSWORD e BACKOFFICE_SESSION_SECRET no servidor.</div>}
           {notice && <div className={`admin-notice ${notice.type}`}>{notice.message}</div>}
           {stage === "credentials" ? <>
             <label>Utilizador<input name="username" autoComplete="username" required /></label>
             <label>Palavra-passe<input name="password" type="password" autoComplete="current-password" required /></label>
             <button className="primary" type="submit" disabled={!configured}>Continuar</button>
+          </> : stage === "password" ? <>
+            <label>Nova palavra-passe<input name="newPassword" type="password" minLength={12} maxLength={128} autoComplete="new-password" required autoFocus /></label>
+            <label>Confirmar palavra-passe<input name="confirmation" type="password" minLength={12} maxLength={128} autoComplete="new-password" required /></label>
+            <button className="primary" type="submit">Alterar e continuar</button>
+            <button className="login-back" type="button" onClick={onBack}>← Voltar ao login</button>
           </> : <>
             {stage === "setup" && setup && <div className="mfa-setup">
               <img src={setup.qrCode} alt="QR code para configurar a aplicação Authenticator" />
@@ -241,7 +266,7 @@ function AdminLogin({ configured, stage, setup, notice, onSubmit, onVerify, onBa
             <button className="primary" type="submit">{stage === "setup" ? "Activar e entrar" : "Confirmar e entrar"}</button>
             <button className="login-back" type="button" onClick={onBack}>← Voltar ao login</button>
           </>}
-          <small>Palavra-passe e código Authenticator são obrigatórios. A sessão expira após 8 horas.</small>
+          <small>Palavra-passe e código Authenticator são obrigatórios. A sessão termina após 30 minutos de inactividade ou 8 horas.</small>
         </form>
       </section>
     </main>

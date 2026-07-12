@@ -1,4 +1,6 @@
-FROM node:22-alpine AS builder
+ARG NODE_IMAGE=node:22.23.1-alpine3.23
+
+FROM ${NODE_IMAGE} AS builder
 
 WORKDIR /app
 
@@ -10,7 +12,14 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM node:22-alpine AS runtime
+FROM ${NODE_IMAGE} AS production-dependencies
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+
+FROM ${NODE_IMAGE} AS runtime
 
 WORKDIR /app
 
@@ -19,7 +28,7 @@ ENV NODE_ENV=production \
     PORT=7788
 
 COPY --from=builder --chown=node:node /app/package.json /app/package-lock.json ./
-COPY --from=builder --chown=node:node /app/node_modules ./node_modules
+COPY --from=production-dependencies --chown=node:node /app/node_modules ./node_modules
 COPY --from=builder --chown=node:node /app/dist ./dist
 
 RUN mkdir -p /app/data/uploads && chown -R node:node /app/data

@@ -61,13 +61,25 @@ async function encryptSecret(secret: string) {
 async function decryptSecret(value: string) {
   const [ivValue, encryptedValue] = value.split(".");
   if (!ivValue || !encryptedValue) throw new Error("Invalid MFA secret");
-  const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: base64UrlToBytes(ivValue) }, await encryptionKey(), base64UrlToBytes(encryptedValue));
-  return new TextDecoder().decode(decrypted);
+  const keys = [process.env.BACKOFFICE_MFA_ENCRYPTION_KEY, process.env.BACKOFFICE_SESSION_SECRET].filter((item, index, all): item is string => Boolean(item) && all.indexOf(item) === index);
+  for (const secret of keys) {
+    try {
+      const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: base64UrlToBytes(ivValue) }, await importEncryptionKey(secret), base64UrlToBytes(encryptedValue));
+      return new TextDecoder().decode(decrypted);
+    } catch {
+      // Try the legacy session key so existing MFA registrations keep working.
+    }
+  }
+  throw new Error("Invalid MFA secret");
 }
 
 async function encryptionKey() {
-  const secret = process.env.BACKOFFICE_SESSION_SECRET;
+  const secret = process.env.BACKOFFICE_MFA_ENCRYPTION_KEY || process.env.BACKOFFICE_SESSION_SECRET;
   if (!secret) throw new Error("BACKOFFICE_SESSION_SECRET is not configured");
+  return importEncryptionKey(secret);
+}
+
+async function importEncryptionKey(secret: string) {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(secret));
   return crypto.subtle.importKey("raw", digest, "AES-GCM", false, ["encrypt", "decrypt"]);
 }

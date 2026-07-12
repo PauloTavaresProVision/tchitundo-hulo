@@ -1,4 +1,6 @@
 import { readAdminSession, sameOrigin } from "@/lib/admin-auth";
+import { recordAudit } from "@/lib/audit-store";
+import { revokeUserSessions } from "@/lib/sessions-store";
 import { deleteUser, findUserById, listUsers, publicUser, updateUser, type UserRole } from "@/lib/users-store";
 
 export const dynamic = "force-dynamic";
@@ -25,9 +27,11 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       ...(body.email !== undefined ? { email: body.email } : {}),
       ...(body.role !== undefined ? { role: body.role } : {}),
       ...(body.active !== undefined ? { active: body.active } : {}),
-      ...(body.password ? { password: body.password } : {}),
+      ...(body.password ? { password: body.password, mustChangePassword: true } : {}),
       ...(body.resetMfa ? { mfaEnabled: false, mfaSecretEncrypted: null } : {}),
     });
+    if (body.password || body.resetMfa || body.active === false || body.role) await revokeUserSessions(id);
+    await recordAudit({ action: "user.updated", outcome: "success", request, userId: session.userId, username: session.username, target: user.username, detail: { role: user.role, active: user.active, resetMfa: Boolean(body.resetMfa), passwordChanged: Boolean(body.password) } });
     return Response.json({ user: publicUser(user) });
   } catch (error) {
     return Response.json({ error: error instanceof Error ? error.message : "Não foi possível actualizar o utilizador." }, { status: 400 });
@@ -47,5 +51,7 @@ export async function DELETE(request: Request, context: { params: Promise<{ id: 
     if (otherAdmins.length === 0) return Response.json({ error: "O backoffice deve manter pelo menos um administrador activo." }, { status: 400 });
   }
   await deleteUser(id);
+  await revokeUserSessions(id);
+  await recordAudit({ action: "user.deleted", outcome: "success", request, userId: session.userId, username: session.username, target: user.username });
   return new Response(null, { status: 204 });
 }

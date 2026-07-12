@@ -18,11 +18,13 @@ export type BackofficeUser = {
   createdAt: string;
   updatedAt: string;
   lastLoginAt: string | null;
+  mustChangePassword: boolean;
+  passwordChangedAt: string;
 };
 
 export type PublicBackofficeUser = Omit<BackofficeUser, "passwordHash" | "passwordSalt" | "passwordIterations" | "mfaSecretEncrypted">;
 
-const PASSWORD_ITERATIONS = 210_000;
+const PASSWORD_ITERATIONS = 600_000;
 let writeQueue: Promise<unknown> = Promise.resolve();
 
 function usersPath() {
@@ -64,13 +66,15 @@ export async function createUser(input: { username: string; displayName: string;
       createdAt: now,
       updatedAt: now,
       lastLoginAt: null,
+      mustChangePassword: true,
+      passwordChangedAt: now,
     };
     users.push(user);
     return user;
   });
 }
 
-export async function updateUser(id: string, input: Partial<Pick<BackofficeUser, "displayName" | "email" | "role" | "active" | "mfaEnabled" | "mfaSecretEncrypted" | "lastLoginAt">> & { password?: string }) {
+export async function updateUser(id: string, input: Partial<Pick<BackofficeUser, "displayName" | "email" | "role" | "active" | "mfaEnabled" | "mfaSecretEncrypted" | "lastLoginAt" | "mustChangePassword">> & { password?: string }) {
   if (input.password) validatePassword(input.password);
   return mutateUsers(async (users) => {
     const index = users.findIndex((user) => user.id === id);
@@ -83,6 +87,8 @@ export async function updateUser(id: string, input: Partial<Pick<BackofficeUser,
       ...password,
       displayName: input.displayName?.trim() || current.displayName,
       email: input.email?.trim().toLowerCase() ?? current.email,
+      mustChangePassword: input.password ? (input.mustChangePassword ?? false) : (input.mustChangePassword ?? current.mustChangePassword),
+      passwordChangedAt: input.password ? new Date().toISOString() : current.passwordChangedAt,
       updatedAt: new Date().toISOString(),
     };
     delete (users[index] as BackofficeUser & { password?: string }).password;
@@ -115,6 +121,11 @@ export function publicUser(user: BackofficeUser): PublicBackofficeUser {
 
 export function validatePassword(password: string) {
   if (password.length < 12) throw new Error("A palavra-passe deve ter pelo menos 12 caracteres.");
+  if (password.length > 128) throw new Error("A palavra-passe deve ter no máximo 128 caracteres.");
+}
+
+export function passwordNeedsUpgrade(user: BackofficeUser) {
+  return user.passwordIterations < PASSWORD_ITERATIONS;
 }
 
 async function ensureUsers(): Promise<BackofficeUser[]> {
@@ -122,7 +133,7 @@ async function ensureUsers(): Promise<BackofficeUser[]> {
     const raw = await readFile(usersPath(), "utf8");
     const users = JSON.parse(raw) as BackofficeUser[];
     if (!Array.isArray(users)) throw new Error("Invalid users store");
-    return users;
+    return users.map(normalizeStoredUser);
   } catch (error) {
     if (!isMissingFile(error)) throw error;
     return bootstrapUsers();
@@ -149,6 +160,8 @@ async function bootstrapUsers() {
     createdAt: now,
     updatedAt: now,
     lastLoginAt: null,
+    mustChangePassword: false,
+    passwordChangedAt: now,
   }];
   await writeUsers(users);
   return users;
@@ -193,6 +206,14 @@ function normalizeUsername(value: string) {
   return value.trim().toLowerCase().replace(/[^a-z0-9._-]/g, "").slice(0, 64);
 }
 
+function normalizeStoredUser(user: BackofficeUser): BackofficeUser {
+  return {
+    ...user,
+    mustChangePassword: Boolean(user.mustChangePassword),
+    passwordChangedAt: typeof user.passwordChangedAt === "string" ? user.passwordChangedAt : user.updatedAt,
+  };
+}
+
 function constantTimeEqual(left: string, right: string) {
   const length = Math.max(left.length, right.length);
   let difference = left.length ^ right.length;
@@ -213,5 +234,5 @@ function base64UrlToBytes(value: string) {
 }
 
 function isMissingFile(error: unknown) {
-  return Boolean(error) && typeof error === "object" && "code" in error && error.code === "ENOENT";
+  return error !== null && typeof error === "object" && "code" in error && error.code === "ENOENT";
 }

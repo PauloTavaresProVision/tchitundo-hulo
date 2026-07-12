@@ -1,5 +1,7 @@
 import { readAdminSession, sameOrigin } from "@/lib/admin-auth";
+import { recordAudit } from "@/lib/audit-store";
 import { readSiteContent, writeSiteContent } from "@/lib/content-store";
+import { jsonRequestTooLarge } from "@/lib/request-security";
 
 export const dynamic = "force-dynamic";
 
@@ -9,11 +11,13 @@ export async function GET(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  if (jsonRequestTooLarge(request)) return Response.json({ error: "Pedido demasiado grande." }, { status: 413 });
   if (!sameOrigin(request)) return Response.json({ error: "Pedido inválido." }, { status: 403 });
-  if (!await readAdminSession(request)) return Response.json({ error: "Não autorizado." }, { status: 401 });
-
+  const session = await readAdminSession(request);
+  if (!session) return Response.json({ error: "Não autorizado." }, { status: 401 });
   try {
     const content = await writeSiteContent(await request.json());
+    await recordAudit({ action: "content.updated", outcome: "success", request, userId: session.userId, username: session.username, detail: { gallery: content.gallery.length, agenda: content.agenda.length, documents: content.documents.length } });
     return Response.json({ content, savedAt: new Date().toISOString() });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Não foi possível guardar os conteúdos.";
