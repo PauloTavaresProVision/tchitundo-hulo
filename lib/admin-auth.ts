@@ -64,9 +64,34 @@ export function expiredSessionCookie() {
 }
 
 export function sameOrigin(request: Request) {
-  const origin = request.headers.get("origin");
-  if (!origin) return true;
-  return origin === new URL(request.url).origin;
+  const originHeader = request.headers.get("origin");
+  if (!originHeader) return true;
+
+  let origin: URL;
+  try {
+    origin = new URL(originHeader);
+  } catch {
+    return false;
+  }
+
+  const forwardedHost = firstForwardedValue(request.headers.get("x-forwarded-host"));
+  const host = firstForwardedValue(request.headers.get("host"));
+  const requestUrl = new URL(request.url);
+  const acceptedHosts = new Set([forwardedHost, host, requestUrl.host].filter(Boolean));
+  const hostMatches = acceptedHosts.has(origin.host);
+
+  const forwardedProtocol = firstForwardedValue(request.headers.get("x-forwarded-proto"));
+  const protocolMatches = !forwardedProtocol || origin.protocol === `${forwardedProtocol}:`;
+
+  if (hostMatches && protocolMatches) return true;
+
+  // Browsers control this header, making it a reliable fallback when a reverse
+  // proxy does not preserve the public host on the internal request URL.
+  return request.headers.get("sec-fetch-site") === "same-origin";
+}
+
+function firstForwardedValue(value: string | null) {
+  return value?.split(",", 1)[0]?.trim().toLowerCase() || "";
 }
 
 function readCookie(header: string | null, name: string) {

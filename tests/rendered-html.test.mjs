@@ -82,9 +82,15 @@ test("protects the backoffice and persists managed content and uploads", async (
     const unauthorized = await worker.fetch(new Request("http://localhost/api/admin/content"), runtimeEnv, runtimeContext);
     assert.equal(unauthorized.status, 401);
 
-    const login = await worker.fetch(new Request("http://localhost/api/admin/session", {
+    const login = await worker.fetch(new Request("http://container:7788/api/admin/session", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Origin: "http://localhost" },
+      headers: {
+        "Content-Type": "application/json",
+        Host: "container:7788",
+        Origin: "https://patrimonio.example.com",
+        "X-Forwarded-Host": "patrimonio.example.com",
+        "X-Forwarded-Proto": "https",
+      },
       body: JSON.stringify({ username: "editor", password: "test-password" }),
     }), runtimeEnv, runtimeContext);
     assert.equal(login.status, 200);
