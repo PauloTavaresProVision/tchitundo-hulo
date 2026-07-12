@@ -242,7 +242,7 @@ function AdminLogin({ configured, stage, setup, notice, onSubmit, onPassword, on
         <div><p>Plataforma editorial</p><h1>Tchitundo-Hulo</h1><span>Património · Identidade · Futuro</span></div>
       </section>
       <section className="admin-login-panel">
-        <form onSubmit={stage === "credentials" ? onSubmit : stage === "password" ? onPassword : onVerify}>
+        <form key={stage} onSubmit={stage === "credentials" ? onSubmit : stage === "password" ? onPassword : onVerify}>
           <p className="admin-kicker">Área reservada · acesso protegido</p>
           <h2>{stage === "credentials" ? "Bem-vindo ao backoffice" : stage === "password" ? "Defina uma nova palavra-passe" : stage === "setup" ? "Active a dupla autenticação" : "Confirme a sua identidade"}</h2>
           <p>{stage === "credentials" ? "Gira conteúdos, imagens, documentos e a agenda cultural da plataforma." : stage === "password" ? "Por segurança, a palavra-passe temporária tem de ser substituída antes do primeiro acesso." : stage === "setup" ? "Digitalize o QR code com o Google Authenticator ou Microsoft Authenticator e introduza o código gerado." : "Introduza o código de 6 dígitos apresentado na sua aplicação Authenticator."}</p>
