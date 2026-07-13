@@ -76,31 +76,38 @@ test("server-renders the Tchitundo-Hulo campaign", async () => {
 });
 
 test("keeps the campaign CMS-ready and Docker-ready on port 7788", async () => {
-  const [page, css, content, dockerfile, compose] = await Promise.all([
+  const [page, siteHome, css, content, dockerfile, compose] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/site-home.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../content/site-content.ts", import.meta.url), "utf8"),
     readFile(new URL("../Dockerfile", import.meta.url), "utf8"),
     readFile(new URL("../compose.yaml", import.meta.url), "utf8"),
   ]);
 
-  assert.match(page, /from "@\/content\/site-content"/);
-  assert.match(page, /gallery\.map/);
-  assert.match(page, /agenda\.map/);
-  assert.match(page, /ArrowLeft/);
-  assert.match(page, /ArrowRight/);
+  assert.match(page, /readSiteContent/);
+  assert.match(page, /initialContent/);
+  assert.match(siteHome, /gallery\.map/);
+  assert.match(siteHome, /agenda\.map/);
+  assert.match(siteHome, /moveGallery\(-1\)/);
+  assert.match(siteHome, /moveGallery\(1\)/);
+  assert.match(siteHome, /video\.enabled/);
   assert.match(content, /export const siteContent/);
   assert.match(css, /\.brand \{ width: 240px;/);
   assert.match(dockerfile, /EXPOSE 7788/);
   assert.match(dockerfile, /--port", "7788"/);
   assert.match(compose, /"7788:7788"/);
   assert.match(compose, /tchitundo_content:\/app\/data/);
-  assert.match(page, /fetch\("\/api\/content"/);
+  assert.match(compose, /mem_limit: 8g/);
+  assert.match(compose, /cpus: 4\.0/);
+  assert.doesNotMatch(page, /fetch\("\/api\/content"/);
 });
 
 test("protects the backoffice with MFA, users, managed content and uploads", async () => {
   const directory = await mkdtemp(path.join(tmpdir(), "tchitundo-backoffice-"));
   process.env.CONTENT_DATA_PATH = path.join(directory, "content.json");
+  process.env.CONTENT_DRAFT_PATH = path.join(directory, "content-draft.json");
+  process.env.CONTENT_HISTORY_PATH = path.join(directory, "content-history.json");
   process.env.CONTENT_UPLOADS_DIR = path.join(directory, "uploads");
   process.env.BACKOFFICE_USERS_PATH = path.join(directory, "users.json");
   process.env.BACKOFFICE_SESSIONS_PATH = path.join(directory, "sessions.json");
@@ -174,6 +181,21 @@ test("protects the backoffice with MFA, users, managed content and uploads", asy
     }), runtimeEnv, runtimeContext);
     assert.equal(saved.status, 200);
 
+    const publicBeforePublish = await worker.fetch(new Request("http://localhost/api/content"), runtimeEnv, runtimeContext);
+    assert.equal(publicBeforePublish.status, 200);
+    assert.notEqual((await publicBeforePublish.json()).agenda[0].title, "Agenda actualizada no backoffice");
+
+    const published = await worker.fetch(new Request("http://localhost/api/admin/content/workflow", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: cookie, Origin: "http://localhost" },
+      body: JSON.stringify({ action: "publish" }),
+    }), runtimeEnv, runtimeContext);
+    assert.equal(published.status, 200);
+
+    const workflow = await worker.fetch(new Request("http://localhost/api/admin/content/workflow", { headers: { Cookie: cookie } }), runtimeEnv, runtimeContext);
+    assert.equal(workflow.status, 200);
+    assert.equal((await workflow.json()).versions.length, 1);
+
     const form = new FormData();
     form.set("file", new File([new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10])], "teste.png", { type: "image/png" }));
     const uploaded = await worker.fetch(new Request("http://localhost/api/admin/uploads", {
@@ -184,6 +206,23 @@ test("protects the backoffice with MFA, users, managed content and uploads", asy
     assert.equal(uploaded.status, 200);
     const media = await uploaded.json();
     assert.match(media.url, /^\/api\/media\//);
+
+    const mediaLibrary = await worker.fetch(new Request("http://localhost/api/admin/media", { headers: { Cookie: cookie } }), runtimeEnv, runtimeContext);
+    assert.equal(mediaLibrary.status, 200);
+    assert.equal((await mediaLibrary.json()).media.length, 1);
+
+    content.gallery[0].src = media.url;
+    const mediaDraft = await worker.fetch(new Request("http://localhost/api/admin/content", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Cookie: cookie, Origin: "http://localhost" },
+      body: JSON.stringify(content),
+    }), runtimeEnv, runtimeContext);
+    assert.equal(mediaDraft.status, 200);
+    const protectedMedia = await worker.fetch(new Request(`http://localhost/api/admin/media/${encodeURIComponent(media.filename)}`, {
+      method: "DELETE",
+      headers: { Cookie: cookie, Origin: "http://localhost" },
+    }), runtimeEnv, runtimeContext);
+    assert.equal(protectedMedia.status, 409);
 
     const spoofedForm = new FormData();
     spoofedForm.set("file", new File([new TextEncoder().encode("not a png")], "falso.png", { type: "image/png" }));
@@ -220,9 +259,19 @@ test("protects the backoffice with MFA, users, managed content and uploads", asy
     assert.equal(analyticsSummary.totals.sessions, 1);
     assert.equal(analyticsSummary.sections[0].id, "galeria");
 
+    const auditApi = await worker.fetch(new Request("http://localhost/api/admin/audit", { headers: { Cookie: cookie } }), runtimeEnv, runtimeContext);
+    assert.equal(auditApi.status, 200);
+    assert.ok((await auditApi.json()).entries.length >= 3);
+
     const robots = await worker.fetch(new Request("http://localhost/robots.txt"), runtimeEnv, runtimeContext);
     assert.equal(robots.status, 200);
-    assert.match(await robots.text(), /Disallow: \/admin/);
+    const robotsText = await robots.text();
+    assert.match(robotsText, /Disallow: \/admin/);
+    assert.match(robotsText, /Disallow: \/preview/);
+
+    const health = await worker.fetch(new Request("http://localhost/api/health"), runtimeEnv, runtimeContext);
+    assert.equal(health.status, 200);
+    assert.equal((await health.json()).status, "ok");
 
     const sitemap = await worker.fetch(new Request("http://localhost/sitemap.xml"), runtimeEnv, runtimeContext);
     assert.equal(sitemap.status, 200);
@@ -272,7 +321,8 @@ test("protects the backoffice with MFA, users, managed content and uploads", asy
 
     const auditLog = await readFile(process.env.BACKOFFICE_AUDIT_PATH, "utf8");
     assert.match(auditLog, /"action":"auth.login"/);
-    assert.match(auditLog, /"action":"content.updated"/);
+    assert.match(auditLog, /"action":"content.draft_saved"/);
+    assert.match(auditLog, /"action":"content.published"/);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

@@ -1,16 +1,26 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, open, readFile, readdir, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-const MAX_FILE_SIZE = 25 * 1024 * 1024;
-const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]);
+const MAX_STANDARD_FILE_SIZE = 25 * 1024 * 1024;
+const MAX_VIDEO_FILE_SIZE = 500 * 1024 * 1024;
+const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf", "video/mp4"]);
+
+export type MediaItem = {
+  filename: string;
+  url: string;
+  type: string;
+  size: number;
+  createdAt: string;
+};
 
 function uploadsDirectory() {
   return process.env.CONTENT_UPLOADS_DIR || path.join(process.cwd(), "data", "uploads");
 }
 
 export async function saveMedia(file: File) {
-  if (!allowedTypes.has(file.type)) throw new Error("Formato não permitido. Use JPG, PNG, WEBP ou PDF.");
-  if (file.size <= 0 || file.size > MAX_FILE_SIZE) throw new Error("O ficheiro deve ter no máximo 25 MB.");
+  if (!allowedTypes.has(file.type)) throw new Error("Formato não permitido. Use JPG, PNG, WEBP, PDF ou MP4.");
+  const maximum = file.type === "video/mp4" ? MAX_VIDEO_FILE_SIZE : MAX_STANDARD_FILE_SIZE;
+  if (file.size <= 0 || file.size > maximum) throw new Error(file.type === "video/mp4" ? "O vídeo deve ter no máximo 500 MB." : "O ficheiro deve ter no máximo 25 MB.");
   const bytes = new Uint8Array(await file.arrayBuffer());
   const detectedType = detectType(bytes);
   if (!detectedType || detectedType !== file.type) throw new Error("O conteúdo do ficheiro não corresponde ao formato declarado.");
@@ -22,17 +32,72 @@ export async function saveMedia(file: File) {
   return { filename, url: `/api/media/${encodeURIComponent(filename)}`, type: detectedType, size: file.size };
 }
 
+export async function listMedia(): Promise<MediaItem[]> {
+  const directory = uploadsDirectory();
+  try {
+    const names = await readdir(directory);
+    const items = await Promise.all(names.filter(validFilename).map(async (filename) => {
+      const info = await stat(path.join(directory, filename));
+      return {
+        filename,
+        url: `/api/media/${encodeURIComponent(filename)}`,
+        type: typeFor(filename),
+        size: info.size,
+        createdAt: info.birthtime.toISOString(),
+      } satisfies MediaItem;
+    }));
+    return items.sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+  } catch (error) {
+    if (isMissingFile(error)) return [];
+    throw error;
+  }
+}
+
+export async function deleteMedia(filename: string) {
+  const safeName = assertFilename(filename);
+  await unlink(path.join(uploadsDirectory(), safeName));
+}
+
 export async function readMedia(filename: string) {
-  const safeName = path.basename(filename);
-  if (safeName !== filename || !/^[a-z0-9][a-z0-9-]{0,110}\.(jpg|png|webp|pdf)$/i.test(safeName)) throw new Error("Invalid filename");
+  const safeName = assertFilename(filename);
   const bytes = await readFile(path.join(uploadsDirectory(), safeName));
   return { bytes, type: typeFor(safeName) };
+}
+
+export async function mediaInfo(filename: string) {
+  const safeName = assertFilename(filename);
+  const info = await stat(path.join(uploadsDirectory(), safeName));
+  return { filename: safeName, size: info.size, type: typeFor(safeName) };
+}
+
+export async function readMediaRange(filename: string, start: number, end: number) {
+  const safeName = assertFilename(filename);
+  const length = Math.max(0, end - start + 1);
+  const buffer = Buffer.alloc(length);
+  const handle = await open(path.join(uploadsDirectory(), safeName), "r");
+  try {
+    const result = await handle.read(buffer, 0, length, start);
+    return buffer.subarray(0, result.bytesRead);
+  } finally {
+    await handle.close();
+  }
+}
+
+function assertFilename(filename: string) {
+  const safeName = path.basename(filename);
+  if (safeName !== filename || !validFilename(safeName)) throw new Error("Invalid filename");
+  return safeName;
+}
+
+function validFilename(filename: string) {
+  return /^[a-z0-9][a-z0-9-]{0,110}\.(jpg|png|webp|pdf|mp4)$/i.test(filename);
 }
 
 function extensionFor(type: string) {
   if (type === "image/jpeg") return ".jpg";
   if (type === "image/png") return ".png";
   if (type === "image/webp") return ".webp";
+  if (type === "video/mp4") return ".mp4";
   return ".pdf";
 }
 
@@ -42,6 +107,7 @@ function typeFor(filename: string) {
   if (extension === ".png") return "image/png";
   if (extension === ".webp") return "image/webp";
   if (extension === ".pdf") return "application/pdf";
+  if (extension === ".mp4") return "video/mp4";
   return "application/octet-stream";
 }
 
@@ -50,9 +116,14 @@ function detectType(bytes: Uint8Array) {
   if (matches(bytes, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) return "image/png";
   if (bytes.length >= 12 && matches(bytes, [0x52, 0x49, 0x46, 0x46]) && matches(bytes.slice(8), [0x57, 0x45, 0x42, 0x50])) return "image/webp";
   if (matches(bytes, [0x25, 0x50, 0x44, 0x46, 0x2d])) return "application/pdf";
+  if (bytes.length >= 12 && matches(bytes.slice(4), [0x66, 0x74, 0x79, 0x70])) return "video/mp4";
   return null;
 }
 
 function matches(bytes: Uint8Array, signature: number[]) {
   return bytes.length >= signature.length && signature.every((value, index) => bytes[index] === value);
+}
+
+function isMissingFile(error: unknown) {
+  return error !== null && typeof error === "object" && "code" in error && error.code === "ENOENT";
 }

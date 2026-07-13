@@ -1,4 +1,4 @@
-import { appendFile, mkdir } from "node:fs/promises";
+import { appendFile, mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { clientAddress } from "@/lib/request-security";
 
@@ -33,4 +33,21 @@ export async function recordAudit(input: AuditInput) {
   });
   writeQueue = operation.then(() => undefined, () => undefined);
   await operation.catch(() => undefined);
+}
+
+export async function readAuditEntries(limit = 250) {
+  const target = process.env.BACKOFFICE_AUDIT_PATH || path.join(process.cwd(), "data", "audit.jsonl");
+  try {
+    const raw = await readFile(target, "utf8");
+    return raw.split(/\r?\n/).filter(Boolean).slice(-Math.min(1_000, Math.max(1, limit))).reverse().flatMap((line) => {
+      try {
+        return [JSON.parse(line) as Record<string, unknown>];
+      } catch {
+        return [];
+      }
+    });
+  } catch (error) {
+    if (error !== null && typeof error === "object" && "code" in error && error.code === "ENOENT") return [];
+    throw error;
+  }
 }

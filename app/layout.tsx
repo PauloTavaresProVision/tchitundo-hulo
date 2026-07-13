@@ -1,16 +1,8 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { Roboto } from "next/font/google";
 import AnalyticsTracker from "@/app/analytics-tracker";
 import { readSiteContent } from "@/lib/content-store";
 import "./globals.css";
-
-const roboto = Roboto({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "700"],
-  variable: "--font-roboto",
-  display: "swap",
-});
 
 export async function generateMetadata(): Promise<Metadata> {
   const { origin } = await requestOrigin();
@@ -72,7 +64,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
 
   return (
     <html lang="pt-AO">
-      <body className={roboto.variable}>
+      <body>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} />
         {children}
         <AnalyticsTracker />
@@ -83,9 +75,19 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
 
 async function requestOrigin() {
   const incoming = await headers();
-  const host = incoming.get("x-forwarded-host") ?? incoming.get("host") ?? "localhost:3000";
-  const protocol = incoming.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
+  const trustProxy = process.env.TRUST_PROXY_HEADERS === "true";
+  const host = firstHeaderValue(trustProxy ? incoming.get("x-forwarded-host") : null)
+    || firstHeaderValue(incoming.get("host"))
+    || "localhost:3000";
+  const forwardedProtocol = trustProxy ? firstHeaderValue(incoming.get("x-forwarded-proto")) : "";
+  const protocol = forwardedProtocol === "http" || forwardedProtocol === "https"
+    ? forwardedProtocol
+    : host.includes("localhost") || host.startsWith("127.0.0.1") ? "http" : "https";
   return { origin: `${protocol}://${host}` };
+}
+
+function firstHeaderValue(value: string | null) {
+  return value?.split(",", 1)[0]?.trim() ?? "";
 }
 
 function absoluteUrl(value: string, origin: string) {

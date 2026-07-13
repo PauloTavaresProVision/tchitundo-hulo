@@ -1,12 +1,12 @@
-name: tchitundo-hulo-preview
+name: tchitundo-hulo
 
 services:
   site:
     build:
       context: .
       dockerfile: Dockerfile
-    image: tchitundo-hulo-preview:latest
-    container_name: tchitundo-hulo-preview
+    image: tchitundo-hulo:latest
+    container_name: tchitundo-hulo
     restart: unless-stopped
     init: true
     ports:
@@ -20,10 +20,14 @@ services:
       BACKOFFICE_SESSIONS_PATH: /app/data/sessions.json
       BACKOFFICE_AUDIT_PATH: /app/data/audit.jsonl
       CONTENT_DATA_PATH: /app/data/content.json
+      CONTENT_DRAFT_PATH: /app/data/content-draft.json
+      CONTENT_HISTORY_PATH: /app/data/content-history.json
       CONTENT_UPLOADS_DIR: /app/data/uploads
       ANALYTICS_DATA_PATH: /app/data/analytics.json
       APP_ALLOWED_HOSTS: ${APP_ALLOWED_HOSTS:-}
       TRUST_PROXY_HEADERS: ${TRUST_PROXY_HEADERS:-false}
+      VINEXT_TRUSTED_HOSTS: ${APP_ALLOWED_HOSTS:-}
+      VINEXT_TRUST_PROXY: ${VINEXT_TRUST_PROXY:-0}
     read_only: true
     security_opt:
       - no-new-privileges:true
@@ -32,8 +36,8 @@ services:
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64m
     pids_limit: 200
-    mem_limit: 768m
-    cpus: 1.0
+    mem_limit: 8g
+    cpus: 4.0
     volumes:
       - tchitundo_content:/app/data
 

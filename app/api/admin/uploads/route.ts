@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   const contentLength = Number(request.headers.get("content-length") ?? 0);
-  if (Number.isFinite(contentLength) && contentLength > 26 * 1024 * 1024) return Response.json({ error: "Pedido demasiado grande." }, { status: 413 });
+  if (Number.isFinite(contentLength) && contentLength > 501 * 1024 * 1024) return Response.json({ error: "Pedido demasiado grande." }, { status: 413 });
   if (!sameOrigin(request)) return Response.json({ error: "Pedido inválido." }, { status: 403 });
   const session = await readAdminSession(request);
   if (!session) return Response.json({ error: "Não autorizado." }, { status: 401 });

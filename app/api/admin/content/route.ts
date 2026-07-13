@@ -1,13 +1,13 @@
 import { readAdminSession, sameOrigin } from "@/lib/admin-auth";
 import { recordAudit } from "@/lib/audit-store";
-import { readSiteContent, writeSiteContent } from "@/lib/content-store";
+import { readDraftSiteContent, saveDraftSiteContent } from "@/lib/content-store";
 import { jsonRequestTooLarge } from "@/lib/request-security";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   if (!await readAdminSession(request)) return Response.json({ error: "Não autorizado." }, { status: 401 });
-  return Response.json(await readSiteContent(), { headers: { "Cache-Control": "no-store" } });
+  return Response.json(await readDraftSiteContent(), { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function PUT(request: Request) {
@@ -16,11 +16,11 @@ export async function PUT(request: Request) {
   const session = await readAdminSession(request);
   if (!session) return Response.json({ error: "Não autorizado." }, { status: 401 });
   try {
-    const content = await writeSiteContent(await request.json());
-    await recordAudit({ action: "content.updated", outcome: "success", request, userId: session.userId, username: session.username, detail: { gallery: content.gallery.length, agenda: content.agenda.length, documents: content.documents.length } });
-    return Response.json({ content, savedAt: new Date().toISOString() });
+    const content = await saveDraftSiteContent(await request.json());
+    await recordAudit({ action: "content.draft_saved", outcome: "success", request, userId: session.userId, username: session.username, detail: { gallery: content.gallery.length, agenda: content.agenda.length, documents: content.documents.length } });
+    return Response.json({ content, savedAt: new Date().toISOString(), status: "draft" });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Não foi possível guardar os conteúdos.";
+    const message = error instanceof Error ? error.message : "Não foi possível guardar o rascunho.";
     return Response.json({ error: message }, { status: 400 });
   }
 }

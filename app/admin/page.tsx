@@ -5,21 +5,26 @@ import { useCallback, useEffect, useState } from "react";
 import type { AgendaItem, CampaignArchiveItem, DocumentItem, GalleryItem, SeoSettings, SiteContent } from "@/content/site-content";
 import type { PublicBackofficeUser, UserRole } from "@/lib/users-store";
 
-type Tab = "overview" | "analytics" | "agenda" | "gallery" | "documents" | "archive" | "seo" | "users";
+type Tab = "overview" | "website" | "analytics" | "agenda" | "gallery" | "video" | "documents" | "archive" | "media" | "history" | "seo" | "users" | "audit";
 type Notice = { type: "success" | "error"; message: string } | null;
 type AuthStage = "credentials" | "password" | "mfa" | "setup";
 type MfaSetup = { secret: string; uri: string; qrCode: string };
 
 const baseTabs: Array<{ id: Tab; label: string; symbol: string }> = [
   { id: "overview", label: "Visão geral", symbol: "◫" },
-  { id: "analytics", label: "Estatísticas", symbol: "◔" },
+  { id: "website", label: "Website", symbol: "▣" },
   { id: "agenda", label: "Agenda cultural", symbol: "◇" },
   { id: "gallery", label: "Galeria", symbol: "▦" },
+  { id: "video", label: "Vídeo", symbol: "▷" },
   { id: "documents", label: "Documentos", symbol: "▤" },
   { id: "archive", label: "Campanhas", symbol: "◎" },
+  { id: "media", label: "Ficheiros", symbol: "▧" },
+  { id: "history", label: "Histórico", symbol: "↶" },
+  { id: "analytics", label: "Estatísticas", symbol: "◔" },
   { id: "seo", label: "SEO", symbol: "⌕" },
 ];
 const usersTab = { id: "users" as Tab, label: "Utilizadores", symbol: "♙" };
+const auditTab = { id: "audit" as Tab, label: "Auditoria", symbol: "≡" };
 
 export default function AdminPage() {
   const [booting, setBooting] = useState(true);
@@ -34,7 +39,7 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
   const [notice, setNotice] = useState<Notice>(null);
-  const tabs = role === "admin" ? [...baseTabs, usersTab] : baseTabs;
+  const tabs = role === "admin" ? [...baseTabs, usersTab, auditTab] : baseTabs;
 
   const loadContent = useCallback(async () => {
     const response = await fetch("/api/admin/content", { cache: "no-store" });
@@ -142,21 +147,45 @@ export default function AdminPage() {
     setNotice(null);
   }
 
-  async function save() {
+  async function saveDraft(showNotice = true) {
     if (!content) return;
-    setSaving(true);
-    setNotice(null);
     try {
       const response = await fetch("/api/admin/content", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(content),
       });
-      const result = await response.json() as { error?: string };
+      const result = await response.json() as { error?: string; content?: SiteContent };
       if (!response.ok) throw new Error(result.error ?? "Não foi possível guardar.");
-      setNotice({ type: "success", message: "Alterações guardadas e disponíveis no website." });
+      if (result.content) setContent(result.content);
+      if (showNotice) setNotice({ type: "success", message: "Rascunho guardado. Publique quando estiver pronto." });
+      return true;
     } catch (error) {
       setNotice({ type: "error", message: error instanceof Error ? error.message : "Não foi possível guardar." });
+      return false;
+    }
+  }
+
+  async function save() {
+    setSaving(true);
+    setNotice(null);
+    await saveDraft();
+    setSaving(false);
+  }
+
+  async function publish() {
+    if (!content) return;
+    setSaving(true);
+    setNotice(null);
+    try {
+      if (!await saveDraft(false)) return;
+      const response = await fetch("/api/admin/content/workflow", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "publish" }) });
+      const result = await response.json() as { error?: string; content?: SiteContent };
+      if (!response.ok) throw new Error(result.error ?? "Não foi possível publicar.");
+      if (result.content) setContent(result.content);
+      setNotice({ type: "success", message: "Conteúdo publicado no website." });
+    } catch (error) {
+      setNotice({ type: "error", message: error instanceof Error ? error.message : "Não foi possível publicar." });
     } finally {
       setSaving(false);
     }
@@ -212,8 +241,9 @@ export default function AdminPage() {
             <h1>{tabs.find((tab) => tab.id === activeTab)?.label}</h1>
           </div>
           <div className="admin-actions">
-            <Link href="/" target="_blank" rel="noreferrer">Ver website ↗</Link>
-            {!(["users", "analytics"] as Tab[]).includes(activeTab) && <button className="primary" onClick={save} disabled={saving}>{saving ? "A guardar…" : "Guardar alterações"}</button>}
+            <Link href="/" target="_blank" rel="noreferrer">Ver publicado ↗</Link>
+            <Link href="/preview" target="_blank" rel="noreferrer">Pré-visualizar ↗</Link>
+            {!(["overview", "users", "audit", "media", "history", "analytics"] as Tab[]).includes(activeTab) && <><button className="secondary" onClick={save} disabled={saving}>{saving ? "A guardar…" : "Guardar rascunho"}</button><button className="primary" onClick={publish} disabled={saving}>Publicar</button></>}
           </div>
         </header>
 
@@ -221,13 +251,18 @@ export default function AdminPage() {
 
         <section className="admin-workspace">
           {activeTab === "overview" && <Overview content={content} onNavigate={setActiveTab} />}
+          {activeTab === "website" && <WebsiteEditor content={content} setContent={setContent} upload={upload} uploading={uploading} />}
           {activeTab === "analytics" && <AnalyticsDashboard />}
           {activeTab === "agenda" && <AgendaEditor items={content.agenda} setContent={setContent} upload={upload} uploading={uploading} />}
           {activeTab === "gallery" && <GalleryEditor items={content.gallery} setContent={setContent} upload={upload} uploading={uploading} />}
+          {activeTab === "video" && <VideoEditor content={content} setContent={setContent} upload={upload} uploading={uploading} />}
           {activeTab === "documents" && <DocumentsEditor items={content.documents} setContent={setContent} upload={upload} uploading={uploading} />}
           {activeTab === "archive" && <ArchiveEditor items={content.archive} setContent={setContent} />}
+          {activeTab === "media" && <MediaLibrary role={role} />}
+          {activeTab === "history" && <HistoryEditor setContent={setContent} setNotice={setNotice} />}
           {activeTab === "seo" && <SeoEditor seo={content.seo} setContent={setContent} upload={upload} uploading={uploading} />}
           {activeTab === "users" && role === "admin" && <UsersEditor currentUsername={username} />}
+          {activeTab === "audit" && role === "admin" && <AuditViewer />}
         </section>
       </main>
     </div>
@@ -286,7 +321,7 @@ function Overview({ content, onNavigate }: { content: SiteContent; onNavigate: (
   ];
   return (
     <div className="admin-overview">
-      <div className="overview-intro"><div><p className="admin-kicker">Conteúdo centralizado</p><h2>A memória continua<br />a ser construída.</h2></div><p>Esta área controla as colecções editoriais que alimentam o website público. As alterações são publicadas assim que forem guardadas.</p></div>
+      <div className="overview-intro"><div><p className="admin-kicker">Conteúdo centralizado</p><h2>A memória continua<br />a ser construída.</h2></div><p>Esta área controla as colecções editoriais que alimentam o website público. As alterações ficam em rascunho até escolher Publicar.</p></div>
       <div className="metric-grid">{cards.map((card) => <button key={card.tab} onClick={() => onNavigate(card.tab)}><i>{card.symbol}</i><strong>{String(card.value).padStart(2, "0")}</strong><span>{card.label}</span><b>→</b></button>)}</div>
       <div className="overview-panels">
         <article><p className="admin-kicker">Agenda em destaque</p><h3>{content.agenda[0]?.title ?? "Sem eventos"}</h3><span>{content.agenda[0]?.status ?? "Adicione o primeiro evento"}</span><button onClick={() => onNavigate("agenda")}>Gerir agenda →</button></article>
@@ -296,10 +331,93 @@ function Overview({ content, onNavigate }: { content: SiteContent; onNavigate: (
   );
 }
 
+function WebsiteEditor({ content, setContent, upload, uploading }: { content: SiteContent; setContent: React.Dispatch<React.SetStateAction<SiteContent | null>>; upload: (file: File, target: string) => Promise<string | null>; uploading: string | null }) {
+  const updateSection = (section: keyof SiteContent["editorial"], field: string, value: string) => setContent((current) => current ? ({ ...current, editorial: { ...current.editorial, [section]: { ...current.editorial[section], [field]: value } } }) : current);
+  const updateLegal = (field: keyof SiteContent["legal"], value: string) => setContent((current) => current ? ({ ...current, legal: { ...current.legal, [field]: value } }) : current);
+  const updatePortal = (index: number, label: string) => setContent((current) => current ? ({ ...current, portals: current.portals.map((item, itemIndex) => itemIndex === index ? { ...item, label } : item) }) : current);
+  const imageUpload = async (section: keyof SiteContent["editorial"], field: string, target: string, file: File) => {
+    const url = await upload(file, target);
+    if (url) updateSection(section, field, url);
+  };
+
+  return <div className="admin-collection website-editor">
+    <header><div><h2>Conteúdo do website</h2><p>Edite os textos, imagens e ligações institucionais sem alterar o design.</p></div></header>
+    <div className="website-editor-grid">
+      <EditorialPanel number="01" title="Hero inicial">
+        <Field label="Linha institucional" value={content.editorial.hero.eyebrow} onChange={(value) => updateSection("hero", "eyebrow", value)} />
+        <Field label="Mensagem" value={content.editorial.hero.lead} onChange={(value) => updateSection("hero", "lead", value)} />
+        <Field label="Botão" value={content.editorial.hero.ctaLabel} onChange={(value) => updateSection("hero", "ctaLabel", value)} />
+        <UploadField label="Fotografia de fundo" value={content.editorial.hero.backgroundImage} busy={uploading === "hero-background"} accept="image/*" onUpload={(file) => void imageUpload("hero", "backgroundImage", "hero-background", file)} onChange={(value) => updateSection("hero", "backgroundImage", value)} />
+        <UploadField label="Lettering Tchitundo-Hulo" value={content.editorial.hero.titleImage} busy={uploading === "hero-lettering"} accept="image/*" onUpload={(file) => void imageUpload("hero", "titleImage", "hero-lettering", file)} onChange={(value) => updateSection("hero", "titleImage", value)} />
+        <div className="field-row">{content.portals.map((portal, index) => <Field key={portal.id} label={`Entrada ${index + 1}`} value={portal.label} onChange={(value) => updatePortal(index, value)} />)}</div>
+      </EditorialPanel>
+
+      <EditorialPanel number="02" title="A campanha">
+        <Field label="Título" value={content.editorial.campaign.title} multiline onChange={(value) => updateSection("campaign", "title", value)} />
+        <Field label="Introdução" value={content.editorial.campaign.intro} multiline onChange={(value) => updateSection("campaign", "intro", value)} />
+        <Field label="Texto" value={content.editorial.campaign.body} multiline onChange={(value) => updateSection("campaign", "body", value)} />
+        <div className="field-row"><Field label="Botão" value={content.editorial.campaign.ctaLabel} onChange={(value) => updateSection("campaign", "ctaLabel", value)} /><Field label="Localização" value={content.editorial.campaign.location} onChange={(value) => updateSection("campaign", "location", value)} /></div>
+        <Field label="Descrição acessível da imagem" value={content.editorial.campaign.imageAlt} onChange={(value) => updateSection("campaign", "imageAlt", value)} />
+        <UploadField label="Imagem" value={content.editorial.campaign.image} busy={uploading === "campaign-image"} accept="image/*" onUpload={(file) => void imageUpload("campaign", "image", "campaign-image", file)} onChange={(value) => updateSection("campaign", "image", value)} />
+      </EditorialPanel>
+
+      <EditorialPanel number="03" title="O lugar">
+        <Field label="Título" value={content.editorial.territory.title} multiline onChange={(value) => updateSection("territory", "title", value)} />
+        <Field label="Introdução" value={content.editorial.territory.intro} multiline onChange={(value) => updateSection("territory", "intro", value)} />
+        <UploadField label="Imagem" value={content.editorial.territory.image} busy={uploading === "territory-image"} accept="image/*" onUpload={(file) => void imageUpload("territory", "image", "territory-image", file)} onChange={(value) => updateSection("territory", "image", value)} />
+        <Field label="Descrição acessível da imagem" value={content.editorial.territory.imageAlt} onChange={(value) => updateSection("territory", "imageAlt", value)} />
+        <div className="field-row"><Field label="Marcador 1" value={content.editorial.territory.markerOne} onChange={(value) => updateSection("territory", "markerOne", value)} /><Field label="Marcador 2" value={content.editorial.territory.markerTwo} onChange={(value) => updateSection("territory", "markerTwo", value)} /></div>
+        <Field label="Núcleo 1" value={content.editorial.territory.noteOneTitle} onChange={(value) => updateSection("territory", "noteOneTitle", value)} /><Field label="Descrição 1" value={content.editorial.territory.noteOneBody} multiline onChange={(value) => updateSection("territory", "noteOneBody", value)} />
+        <Field label="Núcleo 2" value={content.editorial.territory.noteTwoTitle} onChange={(value) => updateSection("territory", "noteTwoTitle", value)} /><Field label="Descrição 2" value={content.editorial.territory.noteTwoBody} multiline onChange={(value) => updateSection("territory", "noteTwoBody", value)} />
+      </EditorialPanel>
+
+      <EditorialPanel number="04" title="Impacto e preservação">
+        <Field label="Citação" value={content.editorial.impact.quote} multiline onChange={(value) => updateSection("impact", "quote", value)} /><Field label="Assinatura" value={content.editorial.impact.attribution} onChange={(value) => updateSection("impact", "attribution", value)} />
+        <UploadField label="Imagem de fundo" value={content.editorial.impact.backgroundImage} busy={uploading === "impact-background"} accept="image/*" onUpload={(file) => void imageUpload("impact", "backgroundImage", "impact-background", file)} onChange={(value) => updateSection("impact", "backgroundImage", value)} />
+      </EditorialPanel>
+
+      <EditorialPanel number="05" title="Títulos editoriais">
+        <Field label="Título da galeria" value={content.editorial.gallery.title} multiline onChange={(value) => updateSection("gallery", "title", value)} /><Field label="Descrição da galeria" value={content.editorial.gallery.description} multiline onChange={(value) => updateSection("gallery", "description", value)} />
+        <Field label="Título da agenda" value={content.editorial.culture.title} multiline onChange={(value) => updateSection("culture", "title", value)} /><Field label="Descrição da agenda" value={content.editorial.culture.description} multiline onChange={(value) => updateSection("culture", "description", value)} /><Field label="Estado da agenda" value={content.editorial.culture.status} onChange={(value) => updateSection("culture", "status", value)} />
+        <Field label="Título dos documentos" value={content.editorial.documents.title} multiline onChange={(value) => updateSection("documents", "title", value)} />
+        <Field label="Título do arquivo" value={content.editorial.archive.title} multiline onChange={(value) => updateSection("archive", "title", value)} /><Field label="Descrição do arquivo" value={content.editorial.archive.description} multiline onChange={(value) => updateSection("archive", "description", value)} />
+      </EditorialPanel>
+
+      <EditorialPanel number="06" title="Fecho e rodapé">
+        <Field label="Título final" value={content.editorial.closing.title} multiline onChange={(value) => updateSection("closing", "title", value)} /><Field label="Mensagem final" value={content.editorial.closing.description} multiline onChange={(value) => updateSection("closing", "description", value)} />
+        <UploadField label="Imagem final" value={content.editorial.closing.backgroundImage} busy={uploading === "closing-background"} accept="image/*" onUpload={(file) => void imageUpload("closing", "backgroundImage", "closing-background", file)} onChange={(value) => updateSection("closing", "backgroundImage", value)} />
+        <div className="field-row"><Field label="Copyright" value={content.legal.copyright} onChange={(value) => updateLegal("copyright", value)} /><Field label="Assinatura" value={content.legal.strapline} onChange={(value) => updateLegal("strapline", value)} /></div>
+        <div className="field-row"><Field label="Nome da privacidade" value={content.legal.privacyLabel} onChange={(value) => updateLegal("privacyLabel", value)} /><Field label="URL da privacidade" value={content.legal.privacyUrl} onChange={(value) => updateLegal("privacyUrl", value)} /></div>
+        <div className="field-row"><Field label="Nome dos termos" value={content.legal.termsLabel} onChange={(value) => updateLegal("termsLabel", value)} /><Field label="URL dos termos" value={content.legal.termsUrl} onChange={(value) => updateLegal("termsUrl", value)} /></div>
+      </EditorialPanel>
+    </div>
+  </div>;
+}
+
+function EditorialPanel({ number, title, children }: { number: string; title: string; children: React.ReactNode }) {
+  return <section className="editorial-panel"><header><span>{number}</span><h3>{title}</h3></header><div>{children}</div></section>;
+}
+
+function VideoEditor({ content, setContent, upload, uploading }: { content: SiteContent; setContent: React.Dispatch<React.SetStateAction<SiteContent | null>>; upload: (file: File, target: string) => Promise<string | null>; uploading: string | null }) {
+  const update = <K extends keyof SiteContent["video"]>(field: K, value: SiteContent["video"][K]) => setContent((current) => current ? ({ ...current, video: { ...current.video, [field]: value } }) : current);
+  return <div className="admin-collection video-editor">
+    <header><div><h2>Vídeo da campanha</h2><p>O módulo fica em preparação até carregar o filme e activar a publicação.</p></div><span className={`video-state ${content.video.enabled && content.video.src ? "ready" : "pending"}`}>{content.video.enabled && content.video.src ? "Pronto" : "Em preparação"}</span></header>
+    <div className="editorial-panel"><div>
+      <Field label="Título" value={content.video.title} multiline onChange={(value) => update("title", value)} /><Field label="Descrição" value={content.video.description} multiline onChange={(value) => update("description", value)} />
+      <div className="field-row"><Field label="Botão" value={content.video.buttonLabel} onChange={(value) => update("buttonLabel", value)} /><Field label="Estado" value={content.video.status} onChange={(value) => update("status", value)} /></div>
+      <div className="field-row"><Field label="Tipo" value={content.video.type} onChange={(value) => update("type", value)} /><Field label="Idioma" value={content.video.language} onChange={(value) => update("language", value)} /></div>
+      <UploadField label="Imagem de capa" value={content.video.poster} busy={uploading === "video-poster"} accept="image/*" onUpload={async (file) => { const url = await upload(file, "video-poster"); if (url) update("poster", url); }} onChange={(value) => update("poster", value)} />
+      <UploadField label="Ficheiro MP4 ou URL" value={content.video.src} busy={uploading === "campaign-video"} accept="video/mp4" onUpload={async (file) => { const url = await upload(file, "campaign-video"); if (url) update("src", url); }} onChange={(value) => update("src", value)} />
+      <label className="toggle-field"><input type="checkbox" checked={content.video.enabled} disabled={!content.video.src} onChange={(event) => update("enabled", event.target.checked)} /><span />Disponibilizar o vídeo no website</label>
+      {!content.video.src && <p className="admin-help">Pode guardar e publicar esta secção sem vídeo. Quando receber o ficheiro, carregue-o aqui e active a opção.</p>}
+    </div></div>
+  </div>;
+}
+
 function AgendaEditor({ items, setContent, upload, uploading }: EditorProps<AgendaItem>) {
   const add = () => setContent((current) => current && ({ ...current, agenda: [...current.agenda, { id: uniqueId("evento"), number: String(current.agenda.length + 1).padStart(2, "0"), type: "Evento", title: "Novo evento", detail: "Descrição do evento", status: "Em preparação", image: "/media/community-rock.jpg" }] }));
   return <Collection title="Agenda cultural" description="Crie e actualize eventos, experiências e conteúdos pedagógicos." onAdd={add} addLabel="Novo evento">
-    {items.map((item, index) => <EditorCard key={item.id} index={index} title={item.title} image={item.image} onDelete={() => removeItem(setContent, "agenda", index)}>
+    {items.map((item, index) => <EditorCard key={item.id} index={index} title={item.title} image={item.image} onDelete={() => removeItem(setContent, "agenda", index)} onMoveUp={index > 0 ? () => moveItem(setContent, "agenda", index, -1) : undefined} onMoveDown={index < items.length - 1 ? () => moveItem(setContent, "agenda", index, 1) : undefined}>
       <div className="field-row"><Field label="Número" value={item.number} onChange={(value) => updateItem(setContent, "agenda", index, "number", value)} /><Field label="Tipo" value={item.type} onChange={(value) => updateItem(setContent, "agenda", index, "type", value)} /></div>
       <Field label="Título" value={item.title} onChange={(value) => updateItem(setContent, "agenda", index, "title", value)} />
       <Field label="Descrição" value={item.detail} multiline onChange={(value) => updateItem(setContent, "agenda", index, "detail", value)} />
@@ -313,7 +431,7 @@ function GalleryEditor({ items, setContent, upload, uploading }: EditorProps<Gal
   const add = () => setContent((current) => current && ({ ...current, gallery: [...current.gallery, { id: uniqueId("imagem"), src: "/media/community-rock.jpg", alt: "Imagem de Tchitundo-Hulo", label: "Nova imagem", orientation: "standard" }] }));
   return <Collection title="Galeria" description="Organize as fotografias, legendas e formatos apresentados no arquivo visual." onAdd={add} addLabel="Adicionar imagem">
     <div className="gallery-admin-grid">{items.map((item, index) => <article className="gallery-admin-card" key={item.id}>
-      <div className="gallery-admin-preview"><img src={item.src} alt="" /><span>{String(index + 1).padStart(2, "0")}</span><button onClick={() => removeItem(setContent, "gallery", index)} aria-label="Eliminar imagem">×</button></div>
+      <div className="gallery-admin-preview"><img src={item.src} alt="" /><span>{String(index + 1).padStart(2, "0")}</span><div className="gallery-card-actions"><button disabled={index === 0} onClick={() => moveItem(setContent, "gallery", index, -1)} aria-label="Mover imagem para cima">↑</button><button disabled={index === items.length - 1} onClick={() => moveItem(setContent, "gallery", index, 1)} aria-label="Mover imagem para baixo">↓</button><button onClick={() => removeItem(setContent, "gallery", index)} aria-label="Eliminar imagem">×</button></div></div>
       <Field label="Legenda" value={item.label} onChange={(value) => updateItem(setContent, "gallery", index, "label", value)} />
       <Field label="Texto alternativo" value={item.alt} onChange={(value) => updateItem(setContent, "gallery", index, "alt", value)} />
       <label className="admin-field">Formato<select value={item.orientation} onChange={(event) => updateItem(setContent, "gallery", index, "orientation", event.target.value)}><option value="wide">Horizontal</option><option value="tall">Vertical</option><option value="standard">Standard</option></select></label>
@@ -325,7 +443,7 @@ function GalleryEditor({ items, setContent, upload, uploading }: EditorProps<Gal
 function DocumentsEditor({ items, setContent, upload, uploading }: EditorProps<DocumentItem>) {
   const add = () => setContent((current) => current && ({ ...current, documents: [...current.documents, { id: uniqueId("documento"), title: "Novo documento", detail: "Documento institucional", available: false }] }));
   return <Collection title="Documentos" description="Disponibilize PDFs institucionais e controle a sua visibilidade pública." onAdd={add} addLabel="Novo documento">
-    {items.map((item, index) => <EditorCard key={item.id} index={index} title={item.title} onDelete={() => removeItem(setContent, "documents", index)}>
+    {items.map((item, index) => <EditorCard key={item.id} index={index} title={item.title} onDelete={() => removeItem(setContent, "documents", index)} onMoveUp={index > 0 ? () => moveItem(setContent, "documents", index, -1) : undefined} onMoveDown={index < items.length - 1 ? () => moveItem(setContent, "documents", index, 1) : undefined}>
       <Field label="Título" value={item.title} onChange={(value) => updateItem(setContent, "documents", index, "title", value)} />
       <Field label="Descrição" value={item.detail} onChange={(value) => updateItem(setContent, "documents", index, "detail", value)} />
       <UploadField label="PDF" value={item.href ?? ""} busy={uploading === `document-${index}`} accept="application/pdf" onUpload={async (file) => { const url = await upload(file, `document-${index}`); if (url) updateItem(setContent, "documents", index, "href", url); }} onChange={(value) => updateItem(setContent, "documents", index, "href", value)} />
@@ -337,12 +455,124 @@ function DocumentsEditor({ items, setContent, upload, uploading }: EditorProps<D
 function ArchiveEditor({ items, setContent }: Pick<EditorProps<CampaignArchiveItem>, "items" | "setContent">) {
   const add = () => setContent((current) => current && ({ ...current, archive: [...current.archive, { id: uniqueId("campanha"), year: String(new Date().getFullYear()), title: "Nova campanha", tag: "Iniciativa institucional" }] }));
   return <Collection title="Arquivo de campanhas" description="Mantenha o histórico das iniciativas institucionais e defina a campanha activa." onAdd={add} addLabel="Nova campanha">
-    {items.map((item, index) => <EditorCard key={item.id} index={index} title={item.title} onDelete={() => removeItem(setContent, "archive", index)}>
+    {items.map((item, index) => <EditorCard key={item.id} index={index} title={item.title} onDelete={() => removeItem(setContent, "archive", index)} onMoveUp={index > 0 ? () => moveItem(setContent, "archive", index, -1) : undefined} onMoveDown={index < items.length - 1 ? () => moveItem(setContent, "archive", index, 1) : undefined}>
       <div className="field-row"><Field label="Ano" value={item.year} onChange={(value) => updateItem(setContent, "archive", index, "year", value)} /><Field label="Categoria" value={item.tag} onChange={(value) => updateItem(setContent, "archive", index, "tag", value)} /></div>
       <Field label="Título" value={item.title} onChange={(value) => updateItem(setContent, "archive", index, "title", value)} />
       <label className="toggle-field"><input type="checkbox" checked={Boolean(item.active)} onChange={(event) => updateItem(setContent, "archive", index, "active", event.target.checked)} /><span />Campanha em destaque</label>
     </EditorCard>)}
   </Collection>;
+}
+
+type MediaRecord = { filename: string; url: string; type: string; size: number; createdAt: string };
+
+async function fetchMediaRecords() {
+  const response = await fetch("/api/admin/media", { cache: "no-store" });
+  const result = await response.json() as { media?: MediaRecord[]; error?: string };
+  if (!response.ok) throw new Error(result.error ?? "Não foi possível carregar os ficheiros.");
+  return result.media ?? [];
+}
+
+function MediaLibrary({ role }: { role: UserRole }) {
+  const [media, setMedia] = useState<MediaRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState<Notice>(null);
+  const load = useCallback(async () => {
+    setMedia(await fetchMediaRecords());
+  }, []);
+  useEffect(() => {
+    let active = true;
+    void fetchMediaRecords()
+      .then((items) => { if (active) setMedia(items); })
+      .catch((error) => { if (active) setMessage({ type: "error", message: error instanceof Error ? error.message : "Não foi possível carregar os ficheiros." }); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
+  async function remove(item: MediaRecord) {
+    if (!window.confirm("Eliminar este ficheiro permanentemente?")) return;
+    const response = await fetch(`/api/admin/media/${encodeURIComponent(item.filename)}`, { method: "DELETE" });
+    if (!response.ok) { const result = await response.json().catch(() => ({})) as { error?: string }; setMessage({ type: "error", message: result.error ?? "Não foi possível eliminar o ficheiro." }); return; }
+    setMessage({ type: "success", message: "Ficheiro eliminado." });
+    await load();
+  }
+  return <div className="admin-collection media-library">
+    <header><div><h2>Biblioteca de ficheiros</h2><p>Consulte os uploads e copie o endereço para reutilização. A eliminação é exclusiva de Administradores.</p></div><strong>{media.length} ficheiros</strong></header>
+    {message && <div className={`admin-notice ${message.type}`}>{message.message}</div>}
+    {loading ? <div className="analytics-loading">A carregar ficheiros…</div> : <div className="media-grid">{media.map((item) => <article key={item.filename}>
+      <div className="media-preview">{item.type.startsWith("image/") ? <img src={item.url} alt="" /> : item.type === "video/mp4" ? <video src={item.url} muted preload="metadata" /> : <span>PDF</span>}</div>
+      <div><strong>{mediaTypeLabel(item.type)}</strong><small>{formatBytes(item.size)} · {new Date(item.createdAt).toLocaleDateString("pt-AO")}</small></div>
+      <footer><button onClick={() => void navigator.clipboard.writeText(item.url)}>Copiar URL</button>{role === "admin" && <button className="danger" onClick={() => void remove(item)}>Eliminar</button>}</footer>
+    </article>)}</div>}
+  </div>;
+}
+
+type ContentVersion = { id: string; createdAt: string; author: string };
+
+async function fetchContentVersions() {
+  const response = await fetch("/api/admin/content/workflow", { cache: "no-store" });
+  const result = await response.json() as { versions?: ContentVersion[]; error?: string };
+  if (!response.ok) throw new Error(result.error ?? "Não foi possível carregar o histórico.");
+  return result.versions ?? [];
+}
+
+function HistoryEditor({ setContent, setNotice }: { setContent: React.Dispatch<React.SetStateAction<SiteContent | null>>; setNotice: React.Dispatch<React.SetStateAction<Notice>> }) {
+  const [versions, setVersions] = useState<ContentVersion[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let active = true;
+    void fetchContentVersions()
+      .then((items) => { if (active) setVersions(items); })
+      .catch((error) => { if (active) setNotice({ type: "error", message: error instanceof Error ? error.message : "Não foi possível carregar o histórico." }); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [setNotice]);
+  async function restore(version: ContentVersion) {
+    if (!window.confirm("Recuperar esta versão como novo rascunho? O website publicado não será alterado até clicar em Publicar.")) return;
+    const response = await fetch("/api/admin/content/workflow", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "restore", versionId: version.id }) });
+    const result = await response.json() as { content?: SiteContent; error?: string };
+    if (!response.ok || !result.content) { setNotice({ type: "error", message: result.error ?? "Não foi possível recuperar a versão." }); return; }
+    setContent(result.content);
+    setNotice({ type: "success", message: "Versão recuperada como rascunho. Reveja e publique quando estiver pronta." });
+  }
+  async function importContent(file: File) {
+    try {
+      const parsed = JSON.parse(await file.text()) as SiteContent;
+      setContent(parsed);
+      setNotice({ type: "success", message: "Conteúdo importado para o editor. Guarde o rascunho para validar." });
+    } catch {
+      setNotice({ type: "error", message: "O ficheiro selecionado não contém JSON válido." });
+    }
+  }
+  return <div className="admin-collection history-editor">
+    <header><div><h2>Histórico e recuperação</h2><p>Cada publicação guarda a versão anterior. Uma recuperação cria um rascunho e nunca altera imediatamente o website.</p></div><div className="history-actions"><a className="secondary" href="/api/admin/content/export">Exportar JSON</a><label className="secondary">Importar JSON<input type="file" accept="application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) void importContent(file); event.target.value = ""; }} /></label></div></header>
+    {loading ? <div className="analytics-loading">A carregar histórico…</div> : versions.length ? <div className="history-list">{versions.map((version, index) => <article key={version.id}><span>{String(index + 1).padStart(2, "0")}</span><div><strong>{new Date(version.createdAt).toLocaleString("pt-AO")}</strong><small>Publicado por {version.author}</small></div><button onClick={() => void restore(version)}>Recuperar como rascunho</button></article>)}</div> : <div className="admin-empty">O histórico será criado após a primeira nova publicação.</div>}
+  </div>;
+}
+
+type AuditEntry = { timestamp?: string; action?: string; outcome?: string; username?: string | null; target?: string | null; source?: string };
+
+function AuditViewer() {
+  const [entries, setEntries] = useState<AuditEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => { fetch("/api/admin/audit", { cache: "no-store" }).then((response) => response.json()).then((result: { entries?: AuditEntry[] }) => setEntries(result.entries ?? [])).finally(() => setLoading(false)); }, []);
+  return <div className="admin-collection audit-viewer">
+    <header><div><h2>Auditoria administrativa</h2><p>Registo dos acessos, publicações, utilizadores e ficheiros.</p></div><a className="secondary" href="/api/admin/audit?download=1">Exportar registo</a></header>
+    {loading ? <div className="analytics-loading">A carregar auditoria…</div> : <div className="audit-table"><div className="audit-head"><span>Data</span><span>Utilizador</span><span>Operação</span><span>Resultado</span></div>{entries.map((entry, index) => <article key={`${entry.timestamp}-${index}`}><time>{entry.timestamp ? new Date(entry.timestamp).toLocaleString("pt-AO") : "-"}</time><span>{entry.username || "Sistema"}</span><strong>{auditLabel(entry.action)}</strong><i className={entry.outcome === "success" ? "success" : "failure"}>{entry.outcome === "success" ? "Sucesso" : "Falha"}</i></article>)}</div>}
+  </div>;
+}
+
+function formatBytes(value: number) {
+  if (value < 1024 * 1024) return `${Math.max(1, Math.round(value / 1024))} KB`;
+  return `${(value / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function mediaTypeLabel(type: string) {
+  if (type === "application/pdf") return "Documento PDF";
+  if (type === "video/mp4") return "Vídeo MP4";
+  return "Imagem";
+}
+
+function auditLabel(value?: string) {
+  return ({ "auth.login": "Início de sessão", "auth.logout": "Fim de sessão", "auth.mfa": "Autenticação MFA", "content.draft_saved": "Rascunho guardado", "content.published": "Conteúdo publicado", "content.version_restored": "Versão recuperada", "media.uploaded": "Ficheiro carregado", "media.deleted": "Ficheiro eliminado", "user.created": "Utilizador criado", "user.updated": "Utilizador atualizado", "user.deleted": "Utilizador eliminado" } as Record<string, string>)[value ?? ""] ?? value ?? "Operação";
 }
 
 type AnalyticsSummary = {
@@ -541,6 +771,13 @@ function UsersEditor({ currentUsername }: { currentUsername: string }) {
     await loadUsers();
   }
 
+  async function resetPassword(user: PublicBackofficeUser) {
+    const password = window.prompt(`Defina uma palavra-passe temporária para ${user.username}. Deve ter pelo menos 12 caracteres.`);
+    if (!password) return;
+    if (password.length < 12) { setMessage({ type: "error", message: "A palavra-passe temporária deve ter pelo menos 12 caracteres." }); return; }
+    await changeUser(user.id, { password }, "Palavra-passe reposta. O utilizador terá de a alterar no próximo acesso.");
+  }
+
   return <div className="users-admin">
     <header><div><h2>Utilizadores e segurança</h2><p>Crie acessos, atribua perfis e controle a dupla autenticação.</p></div><span className="security-badge">MFA obrigatório</span></header>
     {message && <div className={`admin-notice ${message.type}`}>{message.message}</div>}
@@ -560,7 +797,7 @@ function UsersEditor({ currentUsername }: { currentUsername: string }) {
         <select value={user.role} disabled={user.username === currentUsername} onChange={(event) => void changeUser(user.id, { role: event.target.value }, "Perfil actualizado.")}><option value="editor">Editor</option><option value="admin">Administrador</option></select>
         <div className={`mfa-status ${user.mfaEnabled ? "enabled" : "pending"}`}><b>{user.mfaEnabled ? "Protegido" : "Pendente"}</b><span>{user.mfaEnabled ? "Authenticator activo" : "Configura no próximo login"}</span></div>
         <label className="user-active"><input type="checkbox" checked={user.active} disabled={user.username === currentUsername} onChange={(event) => void changeUser(user.id, { active: event.target.checked }, event.target.checked ? "Utilizador activado." : "Utilizador desactivado.")} /><span />{user.active ? "Activo" : "Inactivo"}</label>
-        <div className="user-actions"><button onClick={() => void changeUser(user.id, { resetMfa: true }, "Dupla autenticação reposta. Será configurada no próximo login.")}>Repor MFA</button><button className="danger" disabled={user.username === currentUsername} onClick={() => void remove(user)}>Eliminar</button></div>
+        <div className="user-actions"><button onClick={() => void resetPassword(user)}>Repor palavra-passe</button><button onClick={() => void changeUser(user.id, { resetMfa: true }, "Dupla autenticação reposta. Será configurada no próximo login.")}>Repor MFA</button><button className="danger" disabled={user.username === currentUsername} onClick={() => void remove(user)}>Eliminar</button></div>
       </article>)}
     </div>
   </div>;
@@ -577,8 +814,8 @@ function Collection({ title, description, addLabel, onAdd, children }: { title: 
   return <div className="admin-collection"><header><div><h2>{title}</h2><p>{description}</p></div><button className="secondary" onClick={onAdd}>＋ {addLabel}</button></header><div className="editor-list">{children}</div></div>;
 }
 
-function EditorCard({ index, title, image, onDelete, children }: { index: number; title: string; image?: string; onDelete: () => void; children: React.ReactNode }) {
-  return <article className="editor-card">{image && <img className="editor-card-image" src={image} alt="" />}<header><span>{String(index + 1).padStart(2, "0")}</span><h3>{title}</h3><button onClick={onDelete} aria-label={`Eliminar ${title}`}>Eliminar</button></header><div className="editor-card-fields">{children}</div></article>;
+function EditorCard({ index, title, image, onDelete, onMoveUp, onMoveDown, children }: { index: number; title: string; image?: string; onDelete: () => void; onMoveUp?: () => void; onMoveDown?: () => void; children: React.ReactNode }) {
+  return <article className="editor-card">{image && <img className="editor-card-image" src={image} alt="" />}<header><span>{String(index + 1).padStart(2, "0")}</span><h3>{title}</h3><div className="editor-order-actions"><button disabled={!onMoveUp} onClick={onMoveUp} aria-label={`Mover ${title} para cima`}>↑</button><button disabled={!onMoveDown} onClick={onMoveDown} aria-label={`Mover ${title} para baixo`}>↓</button><button onClick={onDelete} aria-label={`Eliminar ${title}`}>Eliminar</button></div></header><div className="editor-card-fields">{children}</div></article>;
 }
 
 function Field({ label, value, multiline, onChange }: { label: string; value: string; multiline?: boolean; onChange: (value: string) => void }) {
@@ -602,6 +839,17 @@ function updateItem<K extends ContentCollectionKey>(setContent: React.Dispatch<R
 
 function removeItem<K extends ContentCollectionKey>(setContent: React.Dispatch<React.SetStateAction<SiteContent | null>>, collection: K, index: number) {
   setContent((current) => current ? ({ ...current, [collection]: current[collection].filter((_, itemIndex) => itemIndex !== index) } as SiteContent) : current);
+}
+
+function moveItem<K extends ContentCollectionKey>(setContent: React.Dispatch<React.SetStateAction<SiteContent | null>>, collection: K, index: number, direction: -1 | 1) {
+  setContent((current) => {
+    if (!current) return current;
+    const destination = index + direction;
+    if (destination < 0 || destination >= current[collection].length) return current;
+    const items = [...current[collection]] as unknown[];
+    [items[index], items[destination]] = [items[destination], items[index]];
+    return { ...current, [collection]: items } as SiteContent;
+  });
 }
 
 function uniqueId(prefix: string) {

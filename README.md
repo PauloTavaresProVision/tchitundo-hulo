@@ -21,12 +21,24 @@ docker compose up -d --build
 
 O website fica em `/` e o backoffice em `/admin`. Os dados persistentes são guardados no volume `tchitundo_content`.
 
+Configuração de referência para o servidor: 4 vCPU, 8 GB de RAM e 100 GB de armazenamento SSD persistente. O vídeo pode ser carregado mais tarde no módulo próprio do backoffice.
+
+## Gestão editorial
+
+- Edição dos textos, imagens, ligações e títulos de todas as secções do website.
+- Rascunho separado do conteúdo público, pré-visualização autenticada e publicação explícita.
+- Histórico das 30 versões anteriores, recuperação como rascunho e importação/exportação JSON.
+- Agenda, galeria, documentos e campanhas com criação, edição, ordenação e remoção.
+- Biblioteca central de imagens, PDFs e vídeos MP4; uploads de vídeo até 500 MB.
+- Gestão de utilizadores, palavra-passe temporária, MFA TOTP obrigatório e auditoria exportável.
+- Estatísticas próprias e configuração de SEO sem serviços externos obrigatórios.
+
 ## Configuração de segurança
 
 - `BACKOFFICE_SESSION_SECRET` deve ter pelo menos 32 caracteres aleatórios.
 - `BACKOFFICE_MFA_ENCRYPTION_KEY` deve ser uma chave aleatória diferente da chave de sessão.
 - `APP_ALLOWED_HOSTS` deve conter os hosts públicos autorizados, separados por vírgulas e incluindo a porta quando aplicável.
-- Active `TRUST_PROXY_HEADERS=true` apenas quando existe um reverse proxy controlado que elimina os cabeçalhos `X-Forwarded-*` recebidos e escreve os seus próprios valores.
+- Active `TRUST_PROXY_HEADERS=true` e `VINEXT_TRUST_PROXY=1` apenas quando existe um reverse proxy controlado que elimina os cabeçalhos `X-Forwarded-*` recebidos e escreve os seus próprios valores.
 - Em produção, a porta 7788 deve ficar atrás do reverse proxy ou WAF do banco com HTTPS. Não deve ser exposta directamente à Internet.
 - Preserve a chave de sessão actual durante a primeira actualização para manter compatibilidade com os MFA já registados.
 
@@ -35,6 +47,7 @@ Exemplo de hosts:
 ```dotenv
 APP_ALLOWED_HOSTS=patrimonio.standardbank.co.ao
 TRUST_PROXY_HEADERS=true
+VINEXT_TRUST_PROXY=1
 ```
 
 ## Controlos implementados
@@ -47,6 +60,7 @@ TRUST_PROXY_HEADERS=true
 - Protecção de origem, validação de host, limites de pedidos e rate limiting.
 - Validação de assinatura de JPG, PNG, WEBP e PDF antes do armazenamento.
 - Registo de auditoria em `/app/data/audit.jsonl`.
+- Conteúdo publicado, rascunhos e histórico persistentes em `/app/data`.
 - CSP, HSTS em HTTPS, protecção contra framing e restantes headers de segurança.
 - Container sem privilégios, read-only, sem capabilities e com limites de recursos.
 

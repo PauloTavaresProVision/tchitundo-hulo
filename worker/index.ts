@@ -60,7 +60,7 @@ function withSecurityHeaders(response: Response, request: Request) {
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
     "connect-src 'self'",
-    "media-src 'self'",
+    "media-src 'self' https:",
     "frame-src 'none'",
     "object-src 'none'",
     "base-uri 'self'",
@@ -76,7 +76,7 @@ function withSecurityHeaders(response: Response, request: Request) {
   headers.set("Cross-Origin-Opener-Policy", "same-origin");
   headers.set("Cross-Origin-Resource-Policy", "same-origin");
   if (secure) headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
-  if (new URL(request.url).pathname.startsWith("/admin") || new URL(request.url).pathname.startsWith("/api/admin")) {
+  if (new URL(request.url).pathname.startsWith("/admin") || new URL(request.url).pathname.startsWith("/api/admin") || new URL(request.url).pathname === "/preview") {
     headers.set("Cache-Control", "no-store, max-age=0");
     headers.set("Pragma", "no-cache");
   }
