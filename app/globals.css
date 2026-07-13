@@ -93,7 +93,7 @@ img { max-width: 100%; display: block; }
 .territory-notes p { margin: 0; color: rgba(255,255,255,.67); line-height: 1.7; }
 
 .manifesto { position: relative; min-height: 780px; display: grid; place-items: center; overflow: hidden; }
-.manifesto-image { position: absolute; inset: 0; background: linear-gradient(rgba(0,30,98,.7), rgba(3,10,24,.92)), url('/media/gallery-rock-04.jpg') center 42% / cover; transform: scale(1.02); }
+.manifesto-image { position: absolute; inset: 0; background: linear-gradient(rgba(0,30,98,.7), rgba(3,10,24,.92)), var(--impact-image, url('/media/gallery-rock-05.jpg')) center 42% / cover; transform: scale(1.02); }
 .manifesto-content { position: relative; z-index: 2; text-align: center; }
 .manifesto-content .eyebrow { justify-content: center; }
 .manifesto blockquote { max-width: 1120px; margin: 0 auto 42px; font-size: clamp(42px, 6vw, 94px); line-height: 1.05; letter-spacing: -.05em; font-weight: 300; }
@@ -120,7 +120,7 @@ img { max-width: 100%; display: block; }
 .gallery-notice { margin-top: 28px; color: rgba(245,240,231,.42); font-size: 11px; letter-spacing: .06em; }
 
 .film { position: relative; min-height: 820px; display: flex; align-items: center; overflow: hidden; }
-.film-photo { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(3,10,24,.96), rgba(3,10,24,.55) 50%, rgba(3,10,24,.16)), url('/media/gallery-rock-05.jpg') center / cover; }
+.film-photo { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(3,10,24,.96), rgba(3,10,24,.55) 50%, rgba(3,10,24,.16)), var(--film-image, url('/media/community-guide.jpg')) center / cover; }
 .film-photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(0,30,98,.72), transparent 52%); mix-blend-mode: multiply; }
 .film-content { position: relative; z-index: 2; }
 .film h2 { margin: 0 0 32px; max-width: 900px; font-size: clamp(62px, 8vw, 130px); line-height: .87; letter-spacing: -.06em; text-transform: uppercase; font-weight: 300; }
@@ -169,7 +169,7 @@ img { max-width: 100%; display: block; }
 .archive-grid article.active small { color: rgba(255,255,255,.62); }
 
 .closing { position: relative; min-height: 840px; display: flex; align-items: center; overflow: hidden; }
-.closing-photo { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(3,10,24,.98), rgba(0,30,98,.68) 54%, rgba(3,10,24,.14)), url('/media/hero-aerial.jpg') center / cover; }
+.closing-photo { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(3,10,24,.98), rgba(0,30,98,.68) 54%, rgba(3,10,24,.14)), var(--closing-image, url('/media/hero-aerial.jpg')) center / cover; }
 .closing-content { position: relative; z-index: 2; }
 .closing h2 { margin: 0 0 36px; font-size: clamp(68px, 9vw, 142px); line-height: .83; letter-spacing: -.065em; text-transform: uppercase; font-weight: 300; }
 .closing-content > p:not(.eyebrow) { max-width: 590px; color: rgba(255,255,255,.7); font-size: 18px; line-height: 1.7; }
@@ -412,7 +412,7 @@ main { background: var(--ink); }
 .manifesto-image {
   background:
     linear-gradient(90deg, rgba(2,9,23,.93), rgba(0,30,98,.54) 52%, rgba(2,9,23,.72)),
-    url('/media/gallery-rock-04.jpg') center 46% / cover;
+    var(--impact-image, url('/media/gallery-rock-05.jpg')) center 46% / cover;
 }
 .manifesto blockquote { max-width: 1040px; font-size: clamp(40px, 5vw, 72px); line-height: 1.04; }
 
@@ -427,7 +427,7 @@ main { background: var(--ink); }
 .film-photo {
   background:
     linear-gradient(90deg, rgba(2,9,23,.98), rgba(2,9,23,.65) 47%, rgba(2,9,23,.16)),
-    url('/media/gallery-rock-05.jpg') center 43% / cover;
+    var(--film-image, url('/media/community-guide.jpg')) center 43% / cover;
 }
 .film h2 { font-size: clamp(58px, 7vw, 104px); }
 
@@ -469,7 +469,7 @@ main { background: var(--ink); }
 .closing-photo {
   background:
     linear-gradient(90deg, rgba(2,9,23,.98), rgba(0,30,98,.56) 55%, rgba(2,9,23,.2)),
-    url('/media/hero-aerial.jpg') center 52% / cover;
+    var(--closing-image, url('/media/hero-aerial.jpg')) center 52% / cover;
 }
 .closing h2 { font-size: clamp(62px, 8vw, 112px); }
 .site-footer { padding-top: 58px; }
@@ -575,7 +575,7 @@ main { background: var(--ink); }
 .manifesto-image {
   background:
     linear-gradient(90deg, rgba(2,9,23,.9), rgba(0,30,98,.4) 52%, rgba(2,9,23,.42)),
-    url('/media/community-women.jpg') center 48% / cover;
+    var(--impact-image, url('/media/gallery-rock-05.jpg')) center 48% / cover;
   filter: saturate(.92) contrast(1.02);
 }
 
@@ -615,7 +615,7 @@ main { background: var(--ink); }
 .film-photo {
   background:
     linear-gradient(90deg, rgba(2,9,23,.98), rgba(2,9,23,.62) 50%, rgba(2,9,23,.12)),
-    url('/media/community-guide.jpg') center 42% / cover;
+    var(--film-image, url('/media/community-guide.jpg')) center 42% / cover;
 }
 
 .archive-grid article { min-height: 260px; }
@@ -623,7 +623,7 @@ main { background: var(--ink); }
 .closing-photo {
   background:
     linear-gradient(90deg, rgba(2,9,23,.98), rgba(0,30,98,.56) 54%, rgba(2,9,23,.12)),
-    url('/media/community-portrait.jpg') center 34% / cover;
+    var(--closing-image, url('/media/hero-aerial.jpg')) center 52% / cover;
 }
 
 .site-footer { padding: 36px 0 18px; }

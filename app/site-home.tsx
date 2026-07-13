@@ -118,7 +118,11 @@ export default function SiteHome({ initialContent, preview = false }: { initialC
       </section>
 
       <section className="manifesto" id="impacto" aria-label="Manifesto de preservação">
-        <div className="manifesto-image" style={{ backgroundImage: `url(${editorial.impact.backgroundImage})` }} aria-hidden="true" />
+        <div
+          className="manifesto-image"
+          style={{ "--impact-image": `url("${editorial.impact.backgroundImage}")` } as CSSProperties}
+          aria-hidden="true"
+        />
         <div className="shell manifesto-content"><p className="eyebrow">{editorial.impact.eyebrow}</p><blockquote>“{editorial.impact.quote}”</blockquote><p>{editorial.impact.attribution}</p></div>
       </section>
 
@@ -131,7 +135,11 @@ export default function SiteHome({ initialContent, preview = false }: { initialC
       </section>
 
       <section className="film" id="filme" aria-labelledby="film-title">
-        <div className="film-photo" style={{ backgroundImage: `url(${video.poster})` }} aria-hidden="true" />
+        <div
+          className="film-photo"
+          style={{ "--film-image": `url("${video.poster}")` } as CSSProperties}
+          aria-hidden="true"
+        />
         <div className="shell film-content"><p className="eyebrow">{video.eyebrow}</p><h2 id="film-title"><Lines value={video.title} /></h2><p>{video.description}</p><button className="play-button" type="button" onClick={() => setFilmOpen(true)}><span aria-hidden="true">▶</span> {video.buttonLabel}</button></div>
         <div className="film-meta"><span>{video.type}</span><span>{video.enabled && video.src ? "Disponível" : video.status}</span><span>{video.language}</span></div>
       </section>
@@ -153,7 +161,11 @@ export default function SiteHome({ initialContent, preview = false }: { initialC
       </section>
 
       <section className="closing" aria-labelledby="closing-title">
-        <div className="closing-photo" style={{ backgroundImage: `url(${editorial.closing.backgroundImage})` }} aria-hidden="true" />
+        <div
+          className="closing-photo"
+          style={{ "--closing-image": `url("${editorial.closing.backgroundImage}")` } as CSSProperties}
+          aria-hidden="true"
+        />
         <div className="shell closing-content"><p className="eyebrow">{editorial.closing.eyebrow}</p><h2 id="closing-title"><Lines value={editorial.closing.title} /></h2><p>{editorial.closing.description}</p><a className="text-link" href="#inicio">Voltar ao início <span aria-hidden="true">↑</span></a></div>
       </section>
 
