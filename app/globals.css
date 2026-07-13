@@ -982,7 +982,7 @@ main { background: var(--ink); }
   background-image:
     linear-gradient(90deg, rgba(2,7,16,.34) 0%, rgba(2,7,16,.16) 46%, rgba(2,7,16,.02) 76%),
     linear-gradient(0deg, rgba(2,7,16,.38) 0%, transparent 44%),
-    url('/media/hero-sunset-portal.png');
+    var(--hero-image, url('/media/hero-sunset-portal.png'));
   background-size: cover, cover, cover;
   background-position: center, center, 72% 50%;
   filter: saturate(1.04) contrast(1.03);
@@ -1036,7 +1036,7 @@ main { background: var(--ink); }
     background-image:
       linear-gradient(90deg, rgba(2,7,16,.72) 0%, rgba(2,7,16,.42) 52%, rgba(2,7,16,.08) 100%),
       linear-gradient(0deg, rgba(2,7,16,.42), transparent 48%),
-      url('/media/hero-sunset-portal.png');
+      var(--hero-image, url('/media/hero-sunset-portal.png'));
     background-position: center, center, 74% center;
   }
   .hero-photo::after {
@@ -1108,7 +1108,7 @@ main { background: var(--ink); }
     background-image:
       linear-gradient(90deg, rgba(2,7,16,.56) 0%, rgba(2,7,16,.24) 50%, rgba(2,7,16,.03) 100%),
       linear-gradient(0deg, rgba(2,7,16,.34), transparent 52%),
-      url('/media/hero-sunset-portal.png');
+      var(--hero-image, url('/media/hero-sunset-portal.png'));
     background-position: center, center, 86% center;
   }
   .hero h1 { width: 100%; font-size: clamp(46px, 13.6vw, 56px); line-height: .9; }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { CSSProperties } from "react";
 import type { SiteContent } from "@/content/site-content";
 
 export default function SiteHome({ initialContent, preview = false }: { initialContent: SiteContent; preview?: boolean }) {
@@ -54,7 +55,11 @@ export default function SiteHome({ initialContent, preview = false }: { initialC
       <div className="scroll-progress" style={{ transform: `scaleX(${scrollProgress})` }} aria-hidden="true" />
 
       <section className="hero" id="inicio" aria-labelledby="hero-title">
-        <div className="hero-photo" style={{ backgroundImage: `url(${editorial.hero.backgroundImage})` }} aria-hidden="true" />
+        <div
+          className="hero-photo"
+          style={{ "--hero-image": `url("${editorial.hero.backgroundImage}")` } as CSSProperties}
+          aria-hidden="true"
+        />
         <div className="hero-grain" aria-hidden="true" />
         <header className="site-header shell">
           <a className="brand" href="#inicio" aria-label="Standard Bank, início"><img src="/brand/standard-bank-logo-white-official.png" alt="Standard Bank" /></a>
