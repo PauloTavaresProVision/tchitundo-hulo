@@ -463,7 +463,7 @@ function ArchiveEditor({ items, setContent }: Pick<EditorProps<CampaignArchiveIt
   </Collection>;
 }
 
-type MediaRecord = { filename: string; url: string; type: string; size: number; createdAt: string };
+type MediaRecord = { filename: string; url: string; type: string; size: number; createdAt: string; source: "upload" | "website" | "brand"; deletable: boolean };
 
 async function fetchMediaRecords() {
   const response = await fetch("/api/admin/media", { cache: "no-store" });
@@ -495,12 +495,12 @@ function MediaLibrary({ role }: { role: UserRole }) {
     await load();
   }
   return <div className="admin-collection media-library">
-    <header><div><h2>Biblioteca de ficheiros</h2><p>Consulte os uploads e copie o endereço para reutilização. A eliminação é exclusiva de Administradores.</p></div><strong>{media.length} ficheiros</strong></header>
+    <header><div><h2>Biblioteca de ficheiros</h2><p>Inclui as imagens, documentos e elementos institucionais que já fazem parte do website, além dos novos uploads.</p></div><strong>{media.length} ficheiros</strong></header>
     {message && <div className={`admin-notice ${message.type}`}>{message.message}</div>}
-    {loading ? <div className="analytics-loading">A carregar ficheiros…</div> : <div className="media-grid">{media.map((item) => <article key={item.filename}>
+    {loading ? <div className="analytics-loading">A carregar ficheiros…</div> : <div className="media-grid">{media.map((item) => <article key={item.url}>
       <div className="media-preview">{item.type.startsWith("image/") ? <img src={item.url} alt="" /> : item.type === "video/mp4" ? <video src={item.url} muted preload="metadata" /> : <span>PDF</span>}</div>
-      <div><strong>{mediaTypeLabel(item.type)}</strong><small>{formatBytes(item.size)} · {new Date(item.createdAt).toLocaleDateString("pt-AO")}</small></div>
-      <footer><button onClick={() => void navigator.clipboard.writeText(item.url)}>Copiar URL</button>{role === "admin" && <button className="danger" onClick={() => void remove(item)}>Eliminar</button>}</footer>
+      <div className="media-card-info"><strong>{item.filename}</strong><small>{mediaSourceLabel(item.source)} · {mediaTypeLabel(item.type)} · {formatBytes(item.size)}</small><code>{item.url}</code></div>
+      <footer className="media-actions"><a href={item.url} target="_blank" rel="noreferrer">Visualizar</a><button onClick={() => void navigator.clipboard.writeText(item.url)}>Copiar URL</button>{role === "admin" && item.deletable && <button className="danger" onClick={() => void remove(item)}>Eliminar</button>}</footer>
     </article>)}</div>}
   </div>;
 }
@@ -569,6 +569,12 @@ function mediaTypeLabel(type: string) {
   if (type === "application/pdf") return "Documento PDF";
   if (type === "video/mp4") return "Vídeo MP4";
   return "Imagem";
+}
+
+function mediaSourceLabel(source: MediaRecord["source"]) {
+  if (source === "upload") return "Upload do backoffice";
+  if (source === "brand") return "Marca institucional · protegido";
+  return "Incluído no website · protegido";
 }
 
 function auditLabel(value?: string) {
@@ -823,7 +829,16 @@ function Field({ label, value, multiline, onChange }: { label: string; value: st
 }
 
 function UploadField({ label, value, accept, busy, onChange, onUpload }: { label: string; value: string; accept: string; busy: boolean; onChange: (value: string) => void; onUpload: (file: File) => void }) {
-  return <div className="upload-field"><Field label={label} value={value} onChange={onChange} /><label className="upload-button">{busy ? "A carregar…" : "Carregar ficheiro"}<input type="file" accept={accept} disabled={busy} onChange={(event) => { const file = event.target.files?.[0]; if (file) onUpload(file); event.target.value = ""; }} /></label></div>;
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const canPreview = Boolean(value) && ((value.startsWith("/") && !value.startsWith("//") && !value.includes("\\")) || value.startsWith("https://"));
+  const inlinePreview = accept.includes("image/") || accept.includes("video/");
+  return <>
+    <div className="upload-field"><Field label={label} value={value} onChange={onChange} /><div className="upload-actions">
+      {canPreview && (inlinePreview ? <button className="preview-button" type="button" onClick={() => setPreviewOpen(true)}>Visualizar</button> : <a className="preview-button" href={value} target="_blank" rel="noreferrer">Visualizar</a>)}
+      <label className="upload-button">{busy ? "A carregar…" : "Carregar ficheiro"}<input type="file" accept={accept} disabled={busy} onChange={(event) => { const file = event.target.files?.[0]; if (file) onUpload(file); event.target.value = ""; }} /></label>
+    </div></div>
+    {previewOpen && <div className="admin-media-modal" role="dialog" aria-modal="true" aria-label={`Pré-visualização: ${label}`} onClick={() => setPreviewOpen(false)}><div onClick={(event) => event.stopPropagation()}><button className="admin-media-modal-close" type="button" onClick={() => setPreviewOpen(false)} aria-label="Fechar pré-visualização">×</button>{accept.includes("video/") ? <video src={value} controls autoPlay playsInline /> : <img src={value} alt={`Pré-visualização de ${label}`} />}<footer><code>{value}</code><a href={value} target="_blank" rel="noreferrer">Abrir em nova janela ↗</a></footer></div></div>}
+  </>;
 }
 
 type ContentCollectionKey = "portals" | "gallery" | "agenda" | "documents" | "archive";

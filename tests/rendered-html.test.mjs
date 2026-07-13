@@ -76,9 +76,10 @@ test("server-renders the Tchitundo-Hulo campaign", async () => {
 });
 
 test("keeps the campaign CMS-ready and Docker-ready on port 7788", async () => {
-  const [page, siteHome, css, content, dockerfile, compose] = await Promise.all([
+  const [page, siteHome, admin, css, content, dockerfile, compose] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/site-home.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../content/site-content.ts", import.meta.url), "utf8"),
     readFile(new URL("../Dockerfile", import.meta.url), "utf8"),
@@ -92,6 +93,8 @@ test("keeps the campaign CMS-ready and Docker-ready on port 7788", async () => {
   assert.match(siteHome, /moveGallery\(-1\)/);
   assert.match(siteHome, /moveGallery\(1\)/);
   assert.match(siteHome, /video\.enabled/);
+  assert.match(admin, />Visualizar</);
+  assert.match(admin, /mediaSourceLabel/);
   assert.match(content, /export const siteContent/);
   assert.match(css, /\.brand \{ width: 240px;/);
   assert.match(dockerfile, /EXPOSE 7788/);
@@ -209,7 +212,12 @@ test("protects the backoffice with MFA, users, managed content and uploads", asy
 
     const mediaLibrary = await worker.fetch(new Request("http://localhost/api/admin/media", { headers: { Cookie: cookie } }), runtimeEnv, runtimeContext);
     assert.equal(mediaLibrary.status, 200);
-    assert.equal((await mediaLibrary.json()).media.length, 1);
+    const mediaItems = (await mediaLibrary.json()).media;
+    assert.ok(mediaItems.length > 15);
+    assert.ok(mediaItems.some((item) => item.url === media.url && item.deletable === true));
+    assert.ok(mediaItems.some((item) => item.url === "/media/hero-sunset-portal.png" && item.deletable === false));
+    assert.ok(mediaItems.some((item) => item.url === "/documents/relatorio-banco-imagens-tchitundo.pdf"));
+    assert.ok(mediaItems.some((item) => item.url === "/brand/standard-bank-logo-white-official.png" && item.source === "brand"));
 
     content.gallery[0].src = media.url;
     const mediaDraft = await worker.fetch(new Request("http://localhost/api/admin/content", {

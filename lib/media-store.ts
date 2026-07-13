@@ -11,6 +11,8 @@ export type MediaItem = {
   type: string;
   size: number;
   createdAt: string;
+  source: "upload" | "website" | "brand";
+  deletable: boolean;
 };
 
 function uploadsDirectory() {
@@ -33,6 +35,15 @@ export async function saveMedia(file: File) {
 }
 
 export async function listMedia(): Promise<MediaItem[]> {
+  const uploads = await listUploadedMedia();
+  const bundled = await listBundledMedia();
+  return [
+    ...uploads.sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
+    ...bundled.sort((left, right) => left.url.localeCompare(right.url)),
+  ];
+}
+
+async function listUploadedMedia(): Promise<MediaItem[]> {
   const directory = uploadsDirectory();
   try {
     const names = await readdir(directory);
@@ -44,11 +55,68 @@ export async function listMedia(): Promise<MediaItem[]> {
         type: typeFor(filename),
         size: info.size,
         createdAt: info.birthtime.toISOString(),
+        source: "upload",
+        deletable: true,
       } satisfies MediaItem;
     }));
-    return items.sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+    return items;
   } catch (error) {
     if (isMissingFile(error)) return [];
+    throw error;
+  }
+}
+
+async function listBundledMedia(): Promise<MediaItem[]> {
+  const root = await staticAssetsRoot();
+  if (!root) return [];
+  const groups = [
+    { directory: "media", urlRoot: "/media", source: "website" as const },
+    { directory: "documents", urlRoot: "/documents", source: "website" as const },
+    { directory: "brand", urlRoot: "/brand", source: "brand" as const },
+  ];
+  const grouped = await Promise.all(groups.map(async (group) => {
+    const directory = path.join(root, group.directory);
+    try {
+      const names = await readdir(directory);
+      return Promise.all(names.filter(validFilename).map(async (filename) => {
+        const info = await stat(path.join(directory, filename));
+        return {
+          filename,
+          url: `${group.urlRoot}/${encodeURIComponent(filename)}`,
+          type: typeFor(filename),
+          size: info.size,
+          createdAt: info.mtime.toISOString(),
+          source: group.source,
+          deletable: false,
+        } satisfies MediaItem;
+      }));
+    } catch (error) {
+      if (isMissingFile(error)) return [];
+      throw error;
+    }
+  }));
+  const ogImage = await bundledFile(root, "og.png", "/og.png", "website");
+  return [...grouped.flat(), ...(ogImage ? [ogImage] : [])];
+}
+
+async function staticAssetsRoot() {
+  for (const candidate of [path.join(process.cwd(), "public"), path.join(process.cwd(), "dist", "client")]) {
+    try {
+      if ((await stat(candidate)).isDirectory()) return candidate;
+    } catch (error) {
+      if (!isMissingFile(error)) throw error;
+    }
+  }
+  return null;
+}
+
+async function bundledFile(root: string, filename: string, url: string, source: MediaItem["source"]): Promise<MediaItem | null> {
+  try {
+    const info = await stat(path.join(root, filename));
+    if (!info.isFile() || !validFilename(filename)) return null;
+    return { filename, url, type: typeFor(filename), size: info.size, createdAt: info.mtime.toISOString(), source, deletable: false };
+  } catch (error) {
+    if (isMissingFile(error)) return null;
     throw error;
   }
 }
