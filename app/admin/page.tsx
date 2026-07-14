@@ -817,7 +817,7 @@ function UsersEditor({ currentUsername }: { currentUsername: string }) {
     {createOpen && <div className="new-user-modal-backdrop" role="presentation" onClick={() => { if (!creating) setCreateOpen(false); }}><section className="new-user-modal" role="dialog" aria-modal="true" aria-labelledby="new-user-title" onClick={(event) => event.stopPropagation()}>
       <header><div><p className="admin-kicker">Novo acesso</p><h3 id="new-user-title">Criar utilizador</h3><p>Defina a identidade, o nível de acesso e uma palavra-passe temporária.</p></div><button type="button" onClick={() => setCreateOpen(false)} disabled={creating} aria-label="Fechar janela">×</button></header>
       <form className="new-user-form" onSubmit={create}>
-        <label className="admin-field">Nome completo<input name="displayName" autoComplete="name" autoFocus required placeholder="Ex.: Ana Manuel" /></label>
+        <label className="admin-field">Nome completo<input name="displayName" autoComplete="name" required placeholder="Ex.: Ana Manuel" /></label>
         <label className="admin-field">Nome de utilizador<input name="username" autoComplete="off" pattern="[A-Za-z0-9._-]+" required placeholder="Ex.: ana.manuel" /><small>Apenas letras, números, ponto, hífen e underscore.</small></label>
         <label className="admin-field">Email<input name="email" type="email" autoComplete="email" placeholder="nome@standardbank.co.ao" /></label>
         <label className="admin-field">Perfil de acesso<select name="role" defaultValue="editor"><option value="editor">Editor</option><option value="admin">Administrador</option></select><small>O administrador também gere utilizadores e segurança.</small></label>

@@ -127,9 +127,9 @@
 .new-user-modal>header>button { width:42px; height:42px; flex:0 0 42px; border:1px solid #d7dce3; background:#fff; color:#07162a; font-size:24px; cursor:pointer; }
 .new-user-modal>header>button:disabled { opacity:.45; cursor:wait; }
 .new-user-form { display:grid; grid-template-columns:1fr 1fr; gap:22px 20px; padding:30px 34px 34px; }
-.new-user-form .admin-field { gap:10px; font-size:11px; }
-.new-user-form .admin-field input,.new-user-form .admin-field select { min-height:56px; padding:15px 16px; background:#fff; font-size:15px; }
-.new-user-form .admin-field small { min-height:28px; color:#8a929d; font-size:9px; font-weight:400; line-height:1.45; letter-spacing:0; text-transform:none; }
+.new-user-form .admin-field { align-self:start; grid-template-rows:18px 56px 30px; gap:8px; font-size:11px; }
+.new-user-form .admin-field input,.new-user-form .admin-field select { height:56px; min-height:56px; padding:15px 16px; background:#fff; font-size:15px; }
+.new-user-form .admin-field small { align-self:start; color:#8a929d; font-size:9px; font-weight:400; line-height:1.45; letter-spacing:0; text-transform:none; }
 .new-user-password { grid-column:1/-1; }
 .new-user-form footer { grid-column:1/-1; display:flex; justify-content:flex-end; gap:10px; padding-top:8px; border-top:1px solid #e4e7eb; }
 .new-user-form footer button { min-height:48px; padding:0 22px; font-size:11px; font-weight:800; cursor:pointer; }
