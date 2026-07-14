@@ -108,6 +108,9 @@ test("keeps the campaign CMS-ready and Docker-ready on port 7788", async () => {
   assert.match(admin, />Visualizar</);
   assert.match(admin, /mediaSourceLabel/);
   assert.match(admin, /Identifica..o legal do Banco/);
+  assert.match(admin, /Diferenças para o website actual/);
+  assert.match(admin, /new-user-modal/);
+  assert.match(admin, /Criar como rascunho/);
   assert.match(content, /export const siteContent/);
   assert.match(content, /5417093386/);
   assert.match(content, /Gest%C3%A3o-de-Cookies/);
@@ -226,7 +229,11 @@ test("protects the backoffice with MFA, users, managed content and uploads", asy
 
     const workflow = await worker.fetch(new Request("http://localhost/api/admin/content/workflow", { headers: { Cookie: cookie } }), runtimeEnv, runtimeContext);
     assert.equal(workflow.status, 200);
-    assert.equal((await workflow.json()).versions.length, 1);
+    const workflowBody = await workflow.json();
+    assert.equal(workflowBody.versions.length, 1);
+    assert.ok(workflowBody.versions[0].totalChanges >= 2);
+    assert.ok(workflowBody.versions[0].changes.some((change) => change.area === "Agenda cultural"));
+    assert.ok(workflowBody.versions[0].changes.some((change) => change.area === "SEO"));
 
     const form = new FormData();
     form.set("file", new File([new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10])], "teste.png", { type: "image/png" }));

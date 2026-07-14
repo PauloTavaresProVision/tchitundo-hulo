@@ -508,7 +508,13 @@ function MediaLibrary({ role }: { role: UserRole }) {
   </div>;
 }
 
-type ContentVersion = { id: string; createdAt: string; author: string };
+type ContentVersion = {
+  id: string;
+  createdAt: string;
+  author: string;
+  changes: Array<{ area: string; count: number; details: string[] }>;
+  totalChanges: number;
+};
 
 async function fetchContentVersions() {
   const response = await fetch("/api/admin/content/workflow", { cache: "no-store" });
@@ -546,8 +552,12 @@ function HistoryEditor({ setContent, setNotice }: { setContent: React.Dispatch<R
     }
   }
   return <div className="admin-collection history-editor">
-    <header><div><h2>Histórico e recuperação</h2><p>Cada publicação guarda a versão anterior. Uma recuperação cria um rascunho e nunca altera imediatamente o website.</p></div><div className="history-actions"><a className="secondary" href="/api/admin/content/export">Exportar JSON</a><label className="secondary">Importar JSON<input type="file" accept="application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) void importContent(file); event.target.value = ""; }} /></label></div></header>
-    {loading ? <div className="analytics-loading">A carregar histórico…</div> : versions.length ? <div className="history-list">{versions.map((version, index) => <article key={version.id}><span>{String(index + 1).padStart(2, "0")}</span><div><strong>{new Date(version.createdAt).toLocaleString("pt-AO")}</strong><small>Publicado por {version.author}</small></div><button onClick={() => void restore(version)}>Recuperar como rascunho</button></article>)}</div> : <div className="admin-empty">O histórico será criado após a primeira nova publicação.</div>}
+    <header><div><p className="admin-kicker">Controlo editorial</p><h2>Histórico e recuperação</h2><p>Compare cada versão com o website actual antes de a recuperar. A recuperação cria apenas um rascunho para revisão.</p></div><div className="history-actions"><a className="secondary" href="/api/admin/content/export">Exportar JSON</a><label>Importar JSON<input type="file" accept="application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) void importContent(file); event.target.value = ""; }} /></label></div></header>
+    {loading ? <div className="analytics-loading">A carregar histórico…</div> : versions.length ? <div className="history-list">{versions.map((version, index) => <article key={version.id}>
+      <div className="history-version"><span>{String(index + 1).padStart(2, "0")}</span><div><small>Versão arquivada</small><strong>{new Date(version.createdAt).toLocaleString("pt-AO")}</strong><em>Publicação realizada por {version.author}</em></div></div>
+      <div className="history-diff"><div><strong>Diferenças para o website actual</strong><span>{version.totalChanges ? `${version.totalChanges} ${version.totalChanges === 1 ? "alteração encontrada" : "alterações encontradas"}` : "Sem diferenças"}</span></div>{version.changes.length ? <ul>{version.changes.map((change) => <li key={change.area}><b>{change.area}</b><span>{change.details.join(" · ")}</span><i>{change.count}</i></li>)}</ul> : <p>Esta versão tem o mesmo conteúdo do website actualmente publicado.</p>}</div>
+      <button className="history-restore-button" type="button" onClick={() => void restore(version)}><span aria-hidden="true">↶</span><strong>Recuperar versão</strong><small>Criar como rascunho</small></button>
+    </article>)}</div> : <div className="admin-empty">O histórico será criado após a primeira nova publicação.</div>}
   </div>;
 }
 
@@ -714,6 +724,7 @@ function UsersEditor({ currentUsername }: { currentUsername: string }) {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<Notice>(null);
   const [creating, setCreating] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const loadUsers = useCallback(async () => {
     const response = await fetch("/api/admin/users", { cache: "no-store" });
@@ -736,6 +747,18 @@ function UsersEditor({ currentUsername }: { currentUsername: string }) {
     return () => { active = false; };
   }, []);
 
+  useEffect(() => {
+    if (!createOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape" && !creating) setCreateOpen(false); };
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [createOpen, creating]);
+
   async function create(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setCreating(true);
@@ -751,6 +774,7 @@ function UsersEditor({ currentUsername }: { currentUsername: string }) {
     if (!response.ok) setMessage({ type: "error", message: result.error ?? "Não foi possível criar o utilizador." });
     else {
       formElement.reset();
+      setCreateOpen(false);
       setMessage({ type: "success", message: "Utilizador criado. No primeiro acesso terá de configurar o Authenticator." });
       await loadUsers();
     }
@@ -788,17 +812,19 @@ function UsersEditor({ currentUsername }: { currentUsername: string }) {
   }
 
   return <div className="users-admin">
-    <header><div><h2>Utilizadores e segurança</h2><p>Crie acessos, atribua perfis e controle a dupla autenticação.</p></div><span className="security-badge">MFA obrigatório</span></header>
+    <header><div><p className="admin-kicker">Acessos e permissões</p><h2>Utilizadores e segurança</h2><p>Crie acessos, atribua perfis e controle a dupla autenticação.</p></div><div className="users-header-actions"><span className="security-badge">MFA obrigatório</span><button className="new-user-trigger" type="button" onClick={() => setCreateOpen(true)}><span aria-hidden="true">＋</span>Criar utilizador</button></div></header>
     {message && <div className={`admin-notice ${message.type}`}>{message.message}</div>}
-    <form className="new-user-form" onSubmit={create}>
-      <div><p className="admin-kicker">Novo acesso</p><h3>Criar utilizador</h3></div>
-      <label className="admin-field">Nome<input name="displayName" required /></label>
-      <label className="admin-field">Utilizador<input name="username" pattern="[A-Za-z0-9._-]+" required /></label>
-      <label className="admin-field">Email<input name="email" type="email" /></label>
-      <label className="admin-field">Perfil<select name="role" defaultValue="editor"><option value="editor">Editor</option><option value="admin">Administrador</option></select></label>
-      <label className="admin-field">Palavra-passe temporária<input name="password" type="password" minLength={12} required /></label>
-      <button className="primary" disabled={creating}>{creating ? "A criar…" : "Criar utilizador"}</button>
-    </form>
+    {createOpen && <div className="new-user-modal-backdrop" role="presentation" onClick={() => { if (!creating) setCreateOpen(false); }}><section className="new-user-modal" role="dialog" aria-modal="true" aria-labelledby="new-user-title" onClick={(event) => event.stopPropagation()}>
+      <header><div><p className="admin-kicker">Novo acesso</p><h3 id="new-user-title">Criar utilizador</h3><p>Defina a identidade, o nível de acesso e uma palavra-passe temporária.</p></div><button type="button" onClick={() => setCreateOpen(false)} disabled={creating} aria-label="Fechar janela">×</button></header>
+      <form className="new-user-form" onSubmit={create}>
+        <label className="admin-field">Nome completo<input name="displayName" autoComplete="name" autoFocus required placeholder="Ex.: Ana Manuel" /></label>
+        <label className="admin-field">Nome de utilizador<input name="username" autoComplete="off" pattern="[A-Za-z0-9._-]+" required placeholder="Ex.: ana.manuel" /><small>Apenas letras, números, ponto, hífen e underscore.</small></label>
+        <label className="admin-field">Email<input name="email" type="email" autoComplete="email" placeholder="nome@standardbank.co.ao" /></label>
+        <label className="admin-field">Perfil de acesso<select name="role" defaultValue="editor"><option value="editor">Editor</option><option value="admin">Administrador</option></select><small>O administrador também gere utilizadores e segurança.</small></label>
+        <label className="admin-field new-user-password">Palavra-passe temporária<input name="password" type="password" autoComplete="new-password" minLength={12} required placeholder="Mínimo de 12 caracteres" /><small>Será obrigatoriamente alterada no primeiro acesso, antes da configuração do Authenticator.</small></label>
+        <footer><button className="new-user-cancel" type="button" onClick={() => setCreateOpen(false)} disabled={creating}>Cancelar</button><button className="primary" disabled={creating}>{creating ? "A criar utilizador…" : "Criar utilizador"}</button></footer>
+      </form>
+    </section></div>}
     <div className="users-list">
       <div className="users-list-head"><span>Utilizador</span><span>Perfil</span><span>Segurança</span><span>Estado</span><span /></div>
       {loading ? <p className="users-loading">A carregar utilizadores…</p> : users.map((user) => <article key={user.id}>

@@ -9,7 +9,16 @@ type ContentVersion = {
   content: SiteContent;
 };
 
-export type ContentVersionSummary = Omit<ContentVersion, "content">;
+export type ContentVersionChange = {
+  area: string;
+  count: number;
+  details: string[];
+};
+
+export type ContentVersionSummary = Omit<ContentVersion, "content"> & {
+  changes: ContentVersionChange[];
+  totalChanges: number;
+};
 
 const defaultDataDirectory = path.join(process.cwd(), "data");
 const MAX_HISTORY = 30;
@@ -68,7 +77,11 @@ export async function publishDraftSiteContent(author: string): Promise<SiteConte
 }
 
 export async function listContentVersions(): Promise<ContentVersionSummary[]> {
-  return (await readHistory()).map(({ id, createdAt, author }) => ({ id, createdAt, author }));
+  const [history, published] = await Promise.all([readHistory(), readSiteContent()]);
+  return history.map(({ id, createdAt, author, content }) => {
+    const changes = summarizeContentChanges(content, published);
+    return { id, createdAt, author, changes, totalChanges: changes.reduce((total, change) => total + change.count, 0) };
+  });
 }
 
 export async function restoreContentVersion(id: string): Promise<SiteContent> {
@@ -103,6 +116,114 @@ async function readHistory(): Promise<ContentVersion[]> {
     if (isMissingFile(error)) return [];
     throw error;
   }
+}
+
+function summarizeContentChanges(version: SiteContent, published: SiteContent): ContentVersionChange[] {
+  const areas: Array<{ area: string; before: unknown; after: unknown }> = [
+    { area: "Página inicial e hero", before: version.editorial.hero, after: published.editorial.hero },
+    { area: "Entradas da página inicial", before: version.portals, after: published.portals },
+    { area: "A campanha", before: version.editorial.campaign, after: published.editorial.campaign },
+    { area: "O lugar", before: version.editorial.territory, after: published.editorial.territory },
+    { area: "Apresentação da galeria", before: version.editorial.gallery, after: published.editorial.gallery },
+    { area: "Galeria", before: version.gallery, after: published.gallery },
+    { area: "Vídeo", before: version.video, after: published.video },
+    { area: "Cultura", before: version.editorial.culture, after: published.editorial.culture },
+    { area: "Agenda cultural", before: version.agenda, after: published.agenda },
+    { area: "Documentos", before: version.documents, after: published.documents },
+    { area: "Arquivo de campanhas", before: version.archive, after: published.archive },
+    { area: "Impacto e preservação", before: version.editorial.impact, after: published.editorial.impact },
+    { area: "Fecho da página", before: version.editorial.closing, after: published.editorial.closing },
+    { area: "Informação legal", before: version.legal, after: published.legal },
+    { area: "SEO", before: version.seo, after: published.seo },
+  ];
+
+  return areas.flatMap(({ area, before, after }) => {
+    const paths = changedPaths(before, after);
+    if (!paths.length) return [];
+    const details = [...new Set(paths.map((pathValue) => changeFieldLabel(pathValue.at(-1) ?? "content")))];
+    return [{ area, count: paths.length, details }];
+  });
+}
+
+function changedPaths(before: unknown, after: unknown, pathParts: string[] = []): string[][] {
+  if (Object.is(before, after)) return [];
+  if (Array.isArray(before) && Array.isArray(after)) return changedArrayPaths(before, after, pathParts);
+  if (isRecord(before) && isRecord(after)) {
+    return [...new Set([...Object.keys(before), ...Object.keys(after)])]
+      .flatMap((key) => key in before && key in after
+        ? changedPaths(before[key], after[key], [...pathParts, key])
+        : [[...pathParts, key]]);
+  }
+  return [pathParts.length ? pathParts : ["content"]];
+}
+
+function changedArrayPaths(before: unknown[], after: unknown[], pathParts: string[]): string[][] {
+  const beforeItems = collectionById(before);
+  const afterItems = collectionById(after);
+  if (!beforeItems || !afterItems) return JSON.stringify(before) === JSON.stringify(after) ? [] : [[...pathParts, "content"]];
+
+  const changes: string[][] = [];
+  const beforeIds = [...beforeItems.keys()];
+  const afterIds = [...afterItems.keys()];
+  for (const id of afterIds) {
+    if (!beforeItems.has(id)) changes.push([...pathParts, id, "added"]);
+  }
+  for (const id of beforeIds) {
+    if (!afterItems.has(id)) changes.push([...pathParts, id, "removed"]);
+  }
+  const commonBefore = beforeIds.filter((id) => afterItems.has(id));
+  const commonAfter = afterIds.filter((id) => beforeItems.has(id));
+  if (commonBefore.join("\u0000") !== commonAfter.join("\u0000")) changes.push([...pathParts, "order"]);
+  for (const id of commonAfter) {
+    changes.push(...changedPaths(beforeItems.get(id), afterItems.get(id), [...pathParts, id]));
+  }
+  return changes;
+}
+
+function collectionById(value: unknown[]): Map<string, unknown> | null {
+  const entries = value.map((item) => isRecord(item) && typeof item.id === "string" ? [item.id, item] as const : null);
+  if (entries.some((entry) => entry === null)) return null;
+  return new Map(entries as Array<readonly [string, unknown]>);
+}
+
+function changeFieldLabel(field: string) {
+  return ({
+    added: "item adicionado",
+    removed: "item removido",
+    order: "ordem dos conteúdos",
+    content: "conteúdo",
+    backgroundImage: "fotografia de fundo",
+    titleImage: "lettering Tchitundo-Hulo",
+    image: "imagem",
+    src: "ficheiro",
+    poster: "imagem de capa",
+    alt: "texto alternativo",
+    eyebrow: "chamada editorial",
+    title: "título",
+    heading: "título",
+    message: "mensagem",
+    description: "descrição",
+    body: "texto",
+    buttonLabel: "texto do botão",
+    button: "texto do botão",
+    label: "nome",
+    detail: "informação complementar",
+    status: "estado",
+    href: "ligação",
+    enabled: "visibilidade",
+    available: "disponibilidade",
+    orientation: "formato",
+    role: "perfil",
+    year: "ano",
+    tag: "categoria",
+    indexable: "indexação",
+    canonicalUrl: "endereço canónico",
+    ogImage: "imagem de partilha",
+    keywords: "palavras-chave",
+    corporateNotice: "identificação legal",
+    cookiesLabel: "nome da política de cookies",
+    cookiesUrl: "ligação da política de cookies",
+  } as Record<string, string>)[field] ?? "conteúdo";
 }
 
 function normalizeSiteContent(value: unknown): SiteContent | null {
