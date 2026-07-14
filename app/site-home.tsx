@@ -1,5 +1,6 @@
 "use client";
 
+import Image, { type ImageProps } from "next/image";
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import type { SiteContent } from "@/content/site-content";
@@ -62,7 +63,7 @@ export default function SiteHome({ initialContent, preview = false }: { initialC
         />
         <div className="hero-grain" aria-hidden="true" />
         <header className="site-header shell">
-          <a className="brand" href="#inicio" aria-label="Standard Bank, início"><img src="/brand/standard-bank-logo-white-official.png" alt="Standard Bank" /></a>
+          <a className="brand" href="#inicio" aria-label="Standard Bank, início"><ManagedImage src="/brand/standard-bank-logo-white-official.png" alt="Standard Bank" width={1717} height={456} sizes="(max-width: 760px) 154px, 190px" priority /></a>
           <nav className="desktop-nav" aria-label="Navegação principal">
             <a href="#cultura">Agenda cultural</a><a href="#campanha">A campanha</a><a href="#territorio">O lugar</a><a href="#galeria">Galeria</a><a href="#impacto">Preservar</a>
           </nav>
@@ -71,7 +72,7 @@ export default function SiteHome({ initialContent, preview = false }: { initialC
 
         <div className="hero-content shell" id="conteudo">
           <DottedEyebrow value={editorial.hero.eyebrow} />
-          <h1 id="hero-title" className="hero-title-art"><span className="sr-only">Tchitundo-Hulo</span><img src={editorial.hero.titleImage} alt="" aria-hidden="true" /></h1>
+          <h1 id="hero-title" className="hero-title-art"><span className="sr-only">Tchitundo-Hulo</span><ManagedImage src={editorial.hero.titleImage} alt="" aria-hidden="true" width={1676} height={840} sizes="(max-width: 760px) calc(100vw - 34px), 49vw" priority /></h1>
           <div className="incision-rule" aria-hidden="true"><span>||||</span></div>
           <p className="hero-lead">{editorial.hero.lead}</p>
           <a className="text-link hero-cta" href="#campanha">{editorial.hero.ctaLabel} <span aria-hidden="true">→</span></a>
@@ -94,7 +95,7 @@ export default function SiteHome({ initialContent, preview = false }: { initialC
             <a className="text-link" href="#territorio">{editorial.campaign.ctaLabel} <span aria-hidden="true">→</span></a>
           </div>
           <figure className="campaign-visual">
-            <img src={editorial.campaign.image} alt={editorial.campaign.imageAlt} decoding="async" />
+            <ManagedImage src={editorial.campaign.image} alt={editorial.campaign.imageAlt} fill sizes="(max-width: 760px) calc(100vw - 34px), (max-width: 1100px) calc(100vw - 100px), 50vw" />
             <figcaption><span>15°37&apos; S</span><span>12°48&apos; E</span><strong>{editorial.campaign.location}</strong></figcaption>
           </figure>
         </div>
@@ -107,7 +108,7 @@ export default function SiteHome({ initialContent, preview = false }: { initialC
         </div>
         <div className="territory-stage shell">
           <div className="territory-image">
-            <img src={editorial.territory.image} alt={editorial.territory.imageAlt} loading="lazy" decoding="async" />
+            <ManagedImage src={editorial.territory.image} alt={editorial.territory.imageAlt} fill sizes="(max-width: 760px) calc(100vw - 34px), (max-width: 1100px) calc(100vw - 100px), 65vw" />
             <span className="image-marker marker-one">{editorial.territory.markerOne}</span><span className="image-marker marker-two">{editorial.territory.markerTwo}</span>
           </div>
           <div className="territory-notes">
@@ -129,7 +130,7 @@ export default function SiteHome({ initialContent, preview = false }: { initialC
       <section className="gallery-section section-dark" id="galeria" aria-labelledby="gallery-title">
         <div className="shell gallery-heading"><div><p className="eyebrow">{editorial.gallery.eyebrow}</p><h2 id="gallery-title"><Lines value={editorial.gallery.title} /></h2></div><p>{editorial.gallery.description}</p></div>
         <div className="gallery-grid shell" onContextMenu={(event) => event.preventDefault()}>
-          {gallery.map((image, index) => <button className={`gallery-item ${image.orientation}`} type="button" key={image.id} onClick={() => setSelectedIndex(index)} aria-label={`Ampliar imagem: ${image.label}`}><img src={image.src} alt={image.alt} draggable={false} loading={index > 1 ? "lazy" : "eager"} decoding="async" /><span><i>{String(index + 1).padStart(2, "0")}</i>{image.label}<b>＋</b></span></button>)}
+          {gallery.map((image, index) => <button className={`gallery-item ${image.orientation}`} type="button" key={image.id} onClick={() => setSelectedIndex(index)} aria-label={`Ampliar imagem: ${image.label}`}><ManagedImage src={image.src} alt={image.alt} width={1600} height={1200} sizes="(max-width: 440px) calc(100vw - 60px), (max-width: 760px) 50vw, 33vw" draggable={false} loading={index > 1 ? "lazy" : "eager"} /><span><i>{String(index + 1).padStart(2, "0")}</i>{image.label}<b>＋</b></span></button>)}
         </div>
         <p className="gallery-notice shell">{editorial.gallery.notice}</p>
       </section>
@@ -147,7 +148,7 @@ export default function SiteHome({ initialContent, preview = false }: { initialC
       <section className="culture" id="cultura" aria-labelledby="culture-title">
         <div className="shell culture-layout">
           <div className="culture-intro"><div><p className="eyebrow dark">{editorial.culture.eyebrow}</p><h2 id="culture-title"><Lines value={editorial.culture.title} /></h2></div><div className="culture-intro-copy"><p>{editorial.culture.description}</p><span className="agenda-status">{editorial.culture.status}</span></div></div>
-          <div className="agenda-list">{agenda.map((item, index) => <article className={index === 0 ? "agenda-featured" : ""} key={item.id}><div className="agenda-media"><img src={item.image} alt="" loading="lazy" decoding="async" /></div><div className="agenda-card-content"><div className="agenda-card-meta"><span>{item.number}</span><p>{item.type}</p></div><h3>{item.title}</h3><small>{item.detail}</small><div className="agenda-card-footer"><strong>{item.status}</strong><i aria-hidden="true">↗</i></div></div></article>)}</div>
+          <div className="agenda-list">{agenda.map((item, index) => <article className={index === 0 ? "agenda-featured" : ""} key={item.id}><div className="agenda-media"><ManagedImage src={item.image} alt="" fill sizes="(max-width: 760px) calc(100vw - 34px), 50vw" /></div><div className="agenda-card-content"><div className="agenda-card-meta"><span>{item.number}</span><p>{item.type}</p></div><h3>{item.title}</h3><small>{item.detail}</small><div className="agenda-card-footer"><strong>{item.status}</strong><i aria-hidden="true">↗</i></div></div></article>)}</div>
         </div>
       </section>
 
@@ -170,13 +171,13 @@ export default function SiteHome({ initialContent, preview = false }: { initialC
       </section>
 
       <footer className="site-footer">
-        <div className="shell footer-top"><img src="/brand/standard-bank-logo-white-official.png" alt="Standard Bank" /><nav aria-label="Navegação do rodapé"><a href="#campanha">Campanha</a><a href="#territorio">Tchitundo-Hulo</a><a href="#galeria">Galeria</a><a href="#cultura">Cultura</a><a href="#documentos">Documentos</a></nav></div>
+        <div className="shell footer-top"><ManagedImage src="/brand/standard-bank-logo-white-official.png" alt="Standard Bank" width={1717} height={456} sizes="245px" /><nav aria-label="Navegação do rodapé"><a href="#campanha">Campanha</a><a href="#territorio">Tchitundo-Hulo</a><a href="#galeria">Galeria</a><a href="#cultura">Cultura</a><a href="#documentos">Documentos</a></nav></div>
         <div className="shell footer-bottom"><span>{legal.copyright}</span><span className="footer-legal">{legal.privacyUrl && <a href={legal.privacyUrl}>{legal.privacyLabel}</a>}{legal.termsUrl && <a href={legal.termsUrl}>{legal.termsLabel}</a>}</span><span>{legal.strapline}</span></div>
       </footer>
 
       <div className={`mobile-menu ${menuOpen ? "open" : ""}`} aria-hidden={!menuOpen}><div className="mobile-menu-inner"><p>Explorar</p><a href="#campanha" onClick={closeMenu}>A campanha <span>01</span></a><a href="#territorio" onClick={closeMenu}>O lugar <span>02</span></a><a href="#galeria" onClick={closeMenu}>Galeria <span>03</span></a><a href="#cultura" onClick={closeMenu}>Cultura e agenda <span>04</span></a><a href="#arquivo" onClick={closeMenu}>Arquivo <span>05</span></a></div></div>
 
-      {selectedImage && <div className="lightbox" role="dialog" aria-modal="true" aria-label={selectedImage.label} onClick={() => setSelectedIndex(null)}><button className="lightbox-close" type="button" onClick={() => setSelectedIndex(null)} aria-label="Fechar imagem">×</button><button className="gallery-nav gallery-nav-prev" type="button" onClick={(event) => { event.stopPropagation(); moveGallery(-1); }} aria-label="Imagem anterior">←</button><figure onClick={(event) => event.stopPropagation()} onContextMenu={(event) => event.preventDefault()}><img src={selectedImage.src} alt={selectedImage.alt} draggable={false} /><figcaption><span>{selectedImage.label}</span><b>{String((selectedIndex ?? 0) + 1).padStart(2, "0")} / {String(gallery.length).padStart(2, "0")}</b></figcaption></figure><button className="gallery-nav gallery-nav-next" type="button" onClick={(event) => { event.stopPropagation(); moveGallery(1); }} aria-label="Imagem seguinte">→</button></div>}
+      {selectedImage && <div className="lightbox" role="dialog" aria-modal="true" aria-label={selectedImage.label} onClick={() => setSelectedIndex(null)}><button className="lightbox-close" type="button" onClick={() => setSelectedIndex(null)} aria-label="Fechar imagem">×</button><button className="gallery-nav gallery-nav-prev" type="button" onClick={(event) => { event.stopPropagation(); moveGallery(-1); }} aria-label="Imagem anterior">←</button><figure onClick={(event) => event.stopPropagation()} onContextMenu={(event) => event.preventDefault()}><ManagedImage src={selectedImage.src} alt={selectedImage.alt} width={2048} height={1434} sizes="(max-width: 760px) calc(100vw - 36px), 80vw" draggable={false} /><figcaption><span>{selectedImage.label}</span><b>{String((selectedIndex ?? 0) + 1).padStart(2, "0")} / {String(gallery.length).padStart(2, "0")}</b></figcaption></figure><button className="gallery-nav gallery-nav-next" type="button" onClick={(event) => { event.stopPropagation(); moveGallery(1); }} aria-label="Imagem seguinte">→</button></div>}
 
       {filmOpen && <div className="film-modal" role="dialog" aria-modal="true" aria-label={video.enabled && video.src ? video.title : undefined} aria-labelledby={video.enabled && video.src ? undefined : "film-modal-title"} onClick={() => setFilmOpen(false)}><div className={video.enabled && video.src ? "film-player-modal" : ""} onClick={(event) => event.stopPropagation()}><button type="button" onClick={() => setFilmOpen(false)} aria-label="Fechar">×</button>{video.enabled && video.src ? <video controls autoPlay playsInline poster={video.poster} src={video.src}>O seu navegador não suporta vídeo HTML5.</video> : <><span className="film-icon" aria-hidden="true">▶</span><p className="eyebrow">{video.type}</p><h3 id="film-modal-title">O filme está em preparação.</h3><p>Este módulo está pronto para receber o documentário e os conteúdos audiovisuais oficiais da campanha.</p></>}</div></div>}
     </main>
@@ -190,4 +191,10 @@ function Lines({ value }: { value: string }) {
 function DottedEyebrow({ value }: { value: string }) {
   const parts = value.split("·").map((part) => part.trim()).filter(Boolean);
   return <p className="eyebrow">{parts.map((part, index) => <span key={part}>{index > 0 && <i />}{part}</span>)}</p>;
+}
+
+function ManagedImage({ src, alt, unoptimized, ...props }: ImageProps) {
+  if (typeof src === "string" && !src.trim()) return null;
+  const bypassOptimizer = typeof src === "string" && (/^(?:https?:|data:|blob:)/i.test(src) || src.startsWith("/api/"));
+  return <Image src={src} alt={alt} unoptimized={unoptimized ?? bypassOptimizer} {...props} />;
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import Image, { type ImageProps } from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { AgendaItem, CampaignArchiveItem, DocumentItem, GalleryItem, SeoSettings, SiteContent } from "@/content/site-content";
@@ -217,7 +218,7 @@ export default function AdminPage() {
     <div className="admin-shell">
       <aside className="admin-sidebar">
         <Link className="admin-brand" href="/" aria-label="Abrir website">
-          <img src="/brand/standard-bank-logo-white-official.png" alt="Standard Bank" />
+          <ManagedImage src="/brand/standard-bank-logo-white-official.png" alt="Standard Bank" width={1717} height={456} sizes="172px" priority />
           <span>Património cultural</span>
         </Link>
         <nav aria-label="Secções do backoffice">
@@ -273,7 +274,7 @@ function AdminLogin({ configured, stage, setup, notice, onSubmit, onPassword, on
   return (
     <main className="admin-login-page">
       <section className="admin-login-art">
-        <img src="/brand/standard-bank-logo-white-official.png" alt="Standard Bank" />
+        <ManagedImage src="/brand/standard-bank-logo-white-official.png" alt="Standard Bank" width={1717} height={456} sizes="190px" priority />
         <div><p>Plataforma editorial</p><h1>Tchitundo-Hulo</h1><span>Património · Identidade · Futuro</span></div>
       </section>
       <section className="admin-login-panel">
@@ -294,7 +295,7 @@ function AdminLogin({ configured, stage, setup, notice, onSubmit, onPassword, on
             <button className="login-back" type="button" onClick={onBack}>← Voltar ao login</button>
           </> : <>
             {stage === "setup" && setup && <div className="mfa-setup">
-              <img src={setup.qrCode} alt="QR code para configurar a aplicação Authenticator" />
+              <ManagedImage src={setup.qrCode} alt="QR code para configurar a aplicação Authenticator" width={220} height={220} sizes="220px" />
               <div><span>Chave manual</span><code>{setup.secret}</code></div>
             </div>}
             <label>Código de autenticação<input className="mfa-code" name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} placeholder="000000" required autoFocus /></label>
@@ -431,7 +432,7 @@ function GalleryEditor({ items, setContent, upload, uploading }: EditorProps<Gal
   const add = () => setContent((current) => current && ({ ...current, gallery: [...current.gallery, { id: uniqueId("imagem"), src: "/media/community-rock.jpg", alt: "Imagem de Tchitundo-Hulo", label: "Nova imagem", orientation: "standard" }] }));
   return <Collection title="Galeria" description="Organize as fotografias, legendas e formatos apresentados no arquivo visual." onAdd={add} addLabel="Adicionar imagem">
     <div className="gallery-admin-grid">{items.map((item, index) => <article className="gallery-admin-card" key={item.id}>
-      <div className="gallery-admin-preview"><img src={item.src} alt="" /><span>{String(index + 1).padStart(2, "0")}</span><div className="gallery-card-actions"><button disabled={index === 0} onClick={() => moveItem(setContent, "gallery", index, -1)} aria-label="Mover imagem para cima">↑</button><button disabled={index === items.length - 1} onClick={() => moveItem(setContent, "gallery", index, 1)} aria-label="Mover imagem para baixo">↓</button><button onClick={() => removeItem(setContent, "gallery", index)} aria-label="Eliminar imagem">×</button></div></div>
+      <div className="gallery-admin-preview"><ManagedImage src={item.src} alt="" fill sizes="(max-width: 1050px) calc(100vw - 260px), 42vw" /><span>{String(index + 1).padStart(2, "0")}</span><div className="gallery-card-actions"><button disabled={index === 0} onClick={() => moveItem(setContent, "gallery", index, -1)} aria-label="Mover imagem para cima">↑</button><button disabled={index === items.length - 1} onClick={() => moveItem(setContent, "gallery", index, 1)} aria-label="Mover imagem para baixo">↓</button><button onClick={() => removeItem(setContent, "gallery", index)} aria-label="Eliminar imagem">×</button></div></div>
       <Field label="Legenda" value={item.label} onChange={(value) => updateItem(setContent, "gallery", index, "label", value)} />
       <Field label="Texto alternativo" value={item.alt} onChange={(value) => updateItem(setContent, "gallery", index, "alt", value)} />
       <label className="admin-field">Formato<select value={item.orientation} onChange={(event) => updateItem(setContent, "gallery", index, "orientation", event.target.value)}><option value="wide">Horizontal</option><option value="tall">Vertical</option><option value="standard">Standard</option></select></label>
@@ -498,7 +499,7 @@ function MediaLibrary({ role }: { role: UserRole }) {
     <header><div><h2>Biblioteca de ficheiros</h2><p>Inclui as imagens, documentos e elementos institucionais que já fazem parte do website, além dos novos uploads.</p></div><strong>{media.length} ficheiros</strong></header>
     {message && <div className={`admin-notice ${message.type}`}>{message.message}</div>}
     {loading ? <div className="analytics-loading">A carregar ficheiros…</div> : <div className="media-grid">{media.map((item) => <article key={item.url}>
-      <div className="media-preview">{item.type.startsWith("image/") ? <img src={item.url} alt="" /> : item.type === "video/mp4" ? <video src={item.url} muted preload="metadata" /> : <span>PDF</span>}</div>
+      <div className="media-preview">{item.type.startsWith("image/") ? <ManagedImage src={item.url} alt="" fill sizes="(max-width: 760px) calc(100vw - 32px), (max-width: 1180px) 40vw, 26vw" /> : item.type === "video/mp4" ? <video src={item.url} muted preload="metadata" /> : <span>PDF</span>}</div>
       <div className="media-card-info"><strong>{item.filename}</strong><small>{mediaSourceLabel(item.source)} · {mediaTypeLabel(item.type)} · {formatBytes(item.size)}</small><code>{item.url}</code></div>
       <footer className="media-actions"><a href={item.url} target="_blank" rel="noreferrer">Visualizar</a><button onClick={() => void navigator.clipboard.writeText(item.url)}>Copiar URL</button>{role === "admin" && item.deletable && <button className="danger" onClick={() => void remove(item)}>Eliminar</button>}</footer>
     </article>)}</div>}
@@ -668,7 +669,7 @@ function SeoEditor({ seo, setContent, upload, uploading }: { seo: SeoSettings; s
         </section>
         <section>
           <header><span>02</span><div><h3>Partilha social</h3><p>Imagem utilizada no WhatsApp, LinkedIn, Facebook e outras plataformas.</p></div></header>
-          {seo.ogImage && <img className="seo-social-preview" src={seo.ogImage} alt="Pré-visualização da imagem de partilha" />}
+          {seo.ogImage && <ManagedImage className="seo-social-preview" src={seo.ogImage} alt="Pré-visualização da imagem de partilha" width={1200} height={630} sizes="(max-width: 760px) calc(100vw - 32px), 700px" />}
           <UploadField label="Imagem de partilha" value={seo.ogImage} busy={uploading === "seo-og-image"} accept="image/*" onUpload={async (file) => { const url = await upload(file, "seo-og-image"); if (url) update("ogImage", url); }} onChange={(value) => update("ogImage", value)} />
           <small>Formato recomendado: 1200 × 630 px, JPG ou PNG.</small>
         </section>
@@ -821,7 +822,7 @@ function Collection({ title, description, addLabel, onAdd, children }: { title: 
 }
 
 function EditorCard({ index, title, image, onDelete, onMoveUp, onMoveDown, children }: { index: number; title: string; image?: string; onDelete: () => void; onMoveUp?: () => void; onMoveDown?: () => void; children: React.ReactNode }) {
-  return <article className="editor-card">{image && <img className="editor-card-image" src={image} alt="" />}<header><span>{String(index + 1).padStart(2, "0")}</span><h3>{title}</h3><div className="editor-order-actions"><button disabled={!onMoveUp} onClick={onMoveUp} aria-label={`Mover ${title} para cima`}>↑</button><button disabled={!onMoveDown} onClick={onMoveDown} aria-label={`Mover ${title} para baixo`}>↓</button><button onClick={onDelete} aria-label={`Eliminar ${title}`}>Eliminar</button></div></header><div className="editor-card-fields">{children}</div></article>;
+  return <article className="editor-card">{image && <ManagedImage className="editor-card-image" src={image} alt="" width={1600} height={900} sizes="(max-width: 760px) calc(100vw - 32px), 700px" />}<header><span>{String(index + 1).padStart(2, "0")}</span><h3>{title}</h3><div className="editor-order-actions"><button disabled={!onMoveUp} onClick={onMoveUp} aria-label={`Mover ${title} para cima`}>↑</button><button disabled={!onMoveDown} onClick={onMoveDown} aria-label={`Mover ${title} para baixo`}>↓</button><button onClick={onDelete} aria-label={`Eliminar ${title}`}>Eliminar</button></div></header><div className="editor-card-fields">{children}</div></article>;
 }
 
 function Field({ label, value, multiline, onChange }: { label: string; value: string; multiline?: boolean; onChange: (value: string) => void }) {
@@ -837,8 +838,14 @@ function UploadField({ label, value, accept, busy, onChange, onUpload }: { label
       {canPreview && (inlinePreview ? <button className="preview-button" type="button" onClick={() => setPreviewOpen(true)}>Visualizar</button> : <a className="preview-button" href={value} target="_blank" rel="noreferrer">Visualizar</a>)}
       <label className="upload-button">{busy ? "A carregar…" : "Carregar ficheiro"}<input type="file" accept={accept} disabled={busy} onChange={(event) => { const file = event.target.files?.[0]; if (file) onUpload(file); event.target.value = ""; }} /></label>
     </div></div>
-    {previewOpen && <div className="admin-media-modal" role="dialog" aria-modal="true" aria-label={`Pré-visualização: ${label}`} onClick={() => setPreviewOpen(false)}><div onClick={(event) => event.stopPropagation()}><button className="admin-media-modal-close" type="button" onClick={() => setPreviewOpen(false)} aria-label="Fechar pré-visualização">×</button>{accept.includes("video/") ? <video src={value} controls autoPlay playsInline /> : <img src={value} alt={`Pré-visualização de ${label}`} />}<footer><code>{value}</code><a href={value} target="_blank" rel="noreferrer">Abrir em nova janela ↗</a></footer></div></div>}
+    {previewOpen && <div className="admin-media-modal" role="dialog" aria-modal="true" aria-label={`Pré-visualização: ${label}`} onClick={() => setPreviewOpen(false)}><div onClick={(event) => event.stopPropagation()}><button className="admin-media-modal-close" type="button" onClick={() => setPreviewOpen(false)} aria-label="Fechar pré-visualização">×</button>{accept.includes("video/") ? <video src={value} controls autoPlay playsInline /> : <ManagedImage src={value} alt={`Pré-visualização de ${label}`} width={2048} height={1434} sizes="94vw" />}<footer><code>{value}</code><a href={value} target="_blank" rel="noreferrer">Abrir em nova janela ↗</a></footer></div></div>}
   </>;
+}
+
+function ManagedImage({ src, alt, unoptimized, ...props }: ImageProps) {
+  if (typeof src === "string" && !src.trim()) return null;
+  const bypassOptimizer = typeof src === "string" && (/^(?:https?:|data:|blob:)/i.test(src) || src.startsWith("/api/"));
+  return <Image src={src} alt={alt} unoptimized={unoptimized ?? bypassOptimizer} {...props} />;
 }
 
 type ContentCollectionKey = "portals" | "gallery" | "agenda" | "documents" | "archive";

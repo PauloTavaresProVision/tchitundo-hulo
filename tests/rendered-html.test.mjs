@@ -97,6 +97,8 @@ test("keeps the campaign CMS-ready and Docker-ready on port 7788", async () => {
   assert.match(siteHome, /--impact-image/);
   assert.match(siteHome, /--film-image/);
   assert.match(siteHome, /--closing-image/);
+  assert.doesNotMatch(siteHome, /<img\b/);
+  assert.doesNotMatch(admin, /<img\b/);
   assert.doesNotMatch(siteHome, /className="(?:hero-photo|manifesto-image|film-photo|closing-photo)" style=\{\{ backgroundImage/);
   assert.match(admin, />Visualizar</);
   assert.match(admin, /mediaSourceLabel/);
@@ -106,6 +108,9 @@ test("keeps the campaign CMS-ready and Docker-ready on port 7788", async () => {
   assert.match(css, /var\(--impact-image/);
   assert.match(css, /var\(--film-image/);
   assert.match(css, /var\(--closing-image/);
+  assert.equal((css.match(/var\(--impact-image/g) ?? []).length, 1);
+  assert.equal((css.match(/var\(--film-image/g) ?? []).length, 1);
+  assert.equal((css.match(/var\(--closing-image/g) ?? []).length, 1);
   assert.match(dockerfile, /EXPOSE 7788/);
   assert.match(dockerfile, /--port", "7788"/);
   assert.match(compose, /"7788:7788"/);
