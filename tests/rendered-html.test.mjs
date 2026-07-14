@@ -72,11 +72,13 @@ test("server-renders the Tchitundo-Hulo campaign", async () => {
   assert.match(html, /apple-touch-icon\.png/i);
   assert.match(html, /application\/ld\+json/i);
   assert.match(html, /Agenda cultural/i);
+  assert.match(html, /5417093386/);
+  assert.match(html, /Pol.tica de cookies/i);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
 });
 
 test("keeps the campaign CMS-ready and Docker-ready on port 7788", async () => {
-  const [page, siteHome, admin, css, content, dockerfile, compose] = await Promise.all([
+  const [page, siteHome, admin, css, content, dockerfile, compose, analytics, cookieConsent, cookieStore] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/site-home.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/page.tsx", import.meta.url), "utf8"),
@@ -84,6 +86,9 @@ test("keeps the campaign CMS-ready and Docker-ready on port 7788", async () => {
     readFile(new URL("../content/site-content.ts", import.meta.url), "utf8"),
     readFile(new URL("../Dockerfile", import.meta.url), "utf8"),
     readFile(new URL("../compose.yaml", import.meta.url), "utf8"),
+    readFile(new URL("../app/analytics-tracker.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/cookie-consent.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../lib/cookie-consent.ts", import.meta.url), "utf8"),
   ]);
 
   assert.match(page, /readSiteContent/);
@@ -102,7 +107,17 @@ test("keeps the campaign CMS-ready and Docker-ready on port 7788", async () => {
   assert.doesNotMatch(siteHome, /className="(?:hero-photo|manifesto-image|film-photo|closing-photo)" style=\{\{ backgroundImage/);
   assert.match(admin, />Visualizar</);
   assert.match(admin, /mediaSourceLabel/);
+  assert.match(admin, /Identifica..o legal do Banco/);
   assert.match(content, /export const siteContent/);
+  assert.match(content, /5417093386/);
+  assert.match(content, /Gest%C3%A3o-de-Cookies/);
+  assert.match(siteHome, /openCookieSettings/);
+  assert.match(cookieConsent, /Rejeitar opcionais/);
+  assert.match(cookieConsent, /Aceitar todos/);
+  assert.match(cookieConsent, /Guardar prefer.ncias/);
+  assert.match(cookieStore, /SameSite=Lax/);
+  assert.match(analytics, /readCookiePreferences\(\)\?\.analytics === true/);
+  assert.match(analytics, /COOKIE_CONSENT_EVENT/);
   assert.match(css, /\.brand \{ width: 240px;/);
   assert.match(css, /var\(--hero-image/);
   assert.match(css, /var\(--impact-image/);

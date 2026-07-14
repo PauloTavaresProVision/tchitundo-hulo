@@ -1,13 +1,37 @@
 "use client";
 
 import { useEffect } from "react";
+import { ANALYTICS_SESSION_KEY, COOKIE_CONSENT_EVENT, clearAnalyticsSession, readCookiePreferences } from "@/lib/cookie-consent";
 
 const FLUSH_INTERVAL = 20_000;
 
 export default function AnalyticsTracker() {
   useEffect(() => {
-    if (window.location.pathname.startsWith("/admin")) return;
+    if (window.location.pathname.startsWith("/admin") || window.location.pathname.startsWith("/preview")) return;
 
+    let stopTracking: ((flushOnStop: boolean) => void) | null = null;
+    const syncConsent = () => {
+      const enabled = readCookiePreferences()?.analytics === true;
+      if (enabled && !stopTracking) stopTracking = startTracking();
+      if (!enabled && stopTracking) {
+        stopTracking(false);
+        stopTracking = null;
+        clearAnalyticsSession();
+      }
+    };
+
+    syncConsent();
+    window.addEventListener(COOKIE_CONSENT_EVENT, syncConsent);
+    return () => {
+      window.removeEventListener(COOKIE_CONSENT_EVENT, syncConsent);
+      stopTracking?.(true);
+    };
+  }, []);
+
+  return null;
+}
+
+function startTracking() {
     const sessionId = getSessionId();
     const visible = new Map<string, number>();
     const pending: Record<string, number> = {};
@@ -60,6 +84,7 @@ export default function AnalyticsTracker() {
     }
 
     function flush(beacon = false) {
+      if (readCookiePreferences()?.analytics !== true) return;
       const payload = snapshot(performance.now());
       if (payload.totalDurationMs < 500 && Object.keys(payload.sectionDurations).length === 0) return;
       const body = JSON.stringify(payload);
@@ -86,25 +111,21 @@ export default function AnalyticsTracker() {
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("pagehide", onPageHide);
 
-    return () => {
+    return (flushOnStop = true) => {
       window.clearInterval(timer);
       observer.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("pagehide", onPageHide);
-      if (!paused) flush(true);
+      if (flushOnStop && !paused) flush(true);
     };
-  }, []);
-
-  return null;
 }
 
 function getSessionId() {
-  const key = "tchitundo_analytics_session";
   try {
-    const current = sessionStorage.getItem(key);
+    const current = sessionStorage.getItem(ANALYTICS_SESSION_KEY);
     if (current) return current;
     const next = crypto.randomUUID().replace(/-/g, "");
-    sessionStorage.setItem(key, next);
+    sessionStorage.setItem(ANALYTICS_SESSION_KEY, next);
     return next;
   } catch {
     return crypto.randomUUID().replace(/-/g, "");

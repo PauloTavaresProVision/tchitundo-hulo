@@ -123,7 +123,7 @@ function normalizeSiteContent(value: unknown): SiteContent | null {
   const seo = hasValidSeo(value.seo) ? value.seo : defaults.seo;
   const editorial = normalizeEditorial(value.editorial, defaults.editorial);
   const video = normalizeStringObject(value.video, defaults.video, ["poster"], ["src"]);
-  const legal = normalizeStringObject(value.legal, defaults.legal, [], ["privacyUrl", "termsUrl"]);
+  const legal = normalizeStringObject(value.legal, defaults.legal, ["cookiesUrl"], ["privacyUrl", "termsUrl"]);
   if (!editorial || !video || !legal || typeof video.enabled !== "boolean") return null;
 
   return {

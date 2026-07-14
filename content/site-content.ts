@@ -108,6 +108,9 @@ export type VideoSettings = {
 export type LegalSettings = {
   copyright: string;
   strapline: string;
+  corporateNotice: string;
+  cookiesLabel: string;
+  cookiesUrl: string;
   privacyLabel: string;
   privacyUrl: string;
   termsLabel: string;
@@ -212,6 +215,9 @@ export const siteContent: SiteContent = {
   legal: {
     copyright: "© 2026 Standard Bank Angola",
     strapline: "Património · Identidade · Futuro",
+    corporateNotice: "STANDARD BANK DE ANGOLA, S.A., sociedade de direito Angolano, matriculada na Conservatória de Registo Comercial de Luanda sob o n.º 631-10, Contribuinte Fiscal n.º 5417093386 e sede social no Inara Business Park & Gardens, Torre 1, Via A2, Distrito Urbano de Talatona, Município de Talatona, Luanda – Angola",
+    cookiesLabel: "Gestão de cookies",
+    cookiesUrl: "https://www.standardbank.co.ao/angola/pt/sobre-nos/legal/Gest%C3%A3o-de-Cookies",
     privacyLabel: "Privacidade",
     privacyUrl: "",
     termsLabel: "Termos de utilização",

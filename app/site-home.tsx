@@ -3,7 +3,9 @@
 import Image, { type ImageProps } from "next/image";
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
+import CookieConsent from "@/app/cookie-consent";
 import type { SiteContent } from "@/content/site-content";
+import { openCookieSettings } from "@/lib/cookie-consent";
 
 export default function SiteHome({ initialContent, preview = false }: { initialContent: SiteContent; preview?: boolean }) {
   const content = initialContent;
@@ -172,8 +174,11 @@ export default function SiteHome({ initialContent, preview = false }: { initialC
 
       <footer className="site-footer">
         <div className="shell footer-top"><ManagedImage src="/brand/standard-bank-logo-white-official.png" alt="Standard Bank" width={1717} height={456} sizes="245px" /><nav aria-label="Navegação do rodapé"><a href="#campanha">Campanha</a><a href="#territorio">Tchitundo-Hulo</a><a href="#galeria">Galeria</a><a href="#cultura">Cultura</a><a href="#documentos">Documentos</a></nav></div>
-        <div className="shell footer-bottom"><span>{legal.copyright}</span><span className="footer-legal">{legal.privacyUrl && <a href={legal.privacyUrl}>{legal.privacyLabel}</a>}{legal.termsUrl && <a href={legal.termsUrl}>{legal.termsLabel}</a>}</span><span>{legal.strapline}</span></div>
+        <div className="footer-corporate shell"><CorporateNotice value={legal.corporateNotice} /></div>
+        <div className="shell footer-bottom"><span>{legal.copyright}</span><span className="footer-legal">{legal.privacyUrl && <a href={legal.privacyUrl}>{legal.privacyLabel}</a>}{legal.termsUrl && <a href={legal.termsUrl}>{legal.termsLabel}</a>}<a href={legal.cookiesUrl} target="_blank" rel="noreferrer">Política de cookies</a><button type="button" onClick={openCookieSettings}>{legal.cookiesLabel}</button></span><span>{legal.strapline}</span></div>
       </footer>
+
+      <CookieConsent policyUrl={legal.cookiesUrl} />
 
       <div className={`mobile-menu ${menuOpen ? "open" : ""}`} aria-hidden={!menuOpen}><div className="mobile-menu-inner"><p>Explorar</p><a href="#campanha" onClick={closeMenu}>A campanha <span>01</span></a><a href="#territorio" onClick={closeMenu}>O lugar <span>02</span></a><a href="#galeria" onClick={closeMenu}>Galeria <span>03</span></a><a href="#cultura" onClick={closeMenu}>Cultura e agenda <span>04</span></a><a href="#arquivo" onClick={closeMenu}>Arquivo <span>05</span></a></div></div>
 
@@ -191,6 +196,12 @@ function Lines({ value }: { value: string }) {
 function DottedEyebrow({ value }: { value: string }) {
   const parts = value.split("·").map((part) => part.trim()).filter(Boolean);
   return <p className="eyebrow">{parts.map((part, index) => <span key={part}>{index > 0 && <i />}{part}</span>)}</p>;
+}
+
+function CorporateNotice({ value }: { value: string }) {
+  const taxNumber = "5417093386";
+  const [before, after] = value.split(taxNumber);
+  return <p>{before}{after === undefined ? null : <><span>{taxNumber}</span>{after}</>}</p>;
 }
 
 function ManagedImage({ src, alt, unoptimized, ...props }: ImageProps) {
