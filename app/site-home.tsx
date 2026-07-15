@@ -2,10 +2,10 @@
 
 import Image, { type ImageProps } from "next/image";
 import { useEffect, useState } from "react";
-import type { CSSProperties } from "react";
 import CookieConsent from "@/app/cookie-consent";
 import type { SiteContent } from "@/content/site-content";
 import { openCookieSettings } from "@/lib/cookie-consent";
+import { optimizedMediaUrl } from "@/lib/optimized-media";
 
 export default function SiteHome({ initialContent, preview = false }: { initialContent: SiteContent; preview?: boolean }) {
   const content = initialContent;
@@ -58,11 +58,7 @@ export default function SiteHome({ initialContent, preview = false }: { initialC
       <div className="scroll-progress" style={{ transform: `scaleX(${scrollProgress})` }} aria-hidden="true" />
 
       <section className="hero" id="inicio" aria-labelledby="hero-title">
-        <div
-          className="hero-photo"
-          style={{ "--hero-image": `url("${editorial.hero.backgroundImage}")` } as CSSProperties}
-          aria-hidden="true"
-        />
+        <div className="hero-photo" aria-hidden="true"><ManagedImage src={editorial.hero.backgroundImage} alt="" fill sizes="100vw" priority /></div>
         <div className="hero-grain" aria-hidden="true" />
         <header className="site-header shell">
           <a className="brand" href="#inicio" aria-label="Standard Bank, início"><ManagedImage src="/brand/standard-bank-logo-white-official.png" alt="Standard Bank" width={1717} height={456} sizes="(max-width: 760px) 154px, 190px" priority /></a>
@@ -121,28 +117,20 @@ export default function SiteHome({ initialContent, preview = false }: { initialC
       </section>
 
       <section className="manifesto" id="impacto" aria-label="Manifesto de preservação">
-        <div
-          className="manifesto-image"
-          style={{ "--impact-image": `url("${editorial.impact.backgroundImage}")` } as CSSProperties}
-          aria-hidden="true"
-        />
+        <div className="manifesto-image" aria-hidden="true"><ManagedImage src={editorial.impact.backgroundImage} alt="" fill sizes="100vw" /></div>
         <div className="shell manifesto-content"><p className="eyebrow">{editorial.impact.eyebrow}</p><blockquote>“{editorial.impact.quote}”</blockquote><p>{editorial.impact.attribution}</p></div>
       </section>
 
       <section className="gallery-section section-dark" id="galeria" aria-labelledby="gallery-title">
         <div className="shell gallery-heading"><div><p className="eyebrow">{editorial.gallery.eyebrow}</p><h2 id="gallery-title"><Lines value={editorial.gallery.title} /></h2></div><p>{editorial.gallery.description}</p></div>
         <div className="gallery-grid shell" onContextMenu={(event) => event.preventDefault()}>
-          {gallery.map((image, index) => <button className={`gallery-item ${image.orientation}`} type="button" key={image.id} onClick={() => setSelectedIndex(index)} aria-label={`Ampliar imagem: ${image.label}`}><ManagedImage src={image.src} alt={image.alt} width={1600} height={1200} sizes="(max-width: 440px) calc(100vw - 60px), (max-width: 760px) 50vw, 33vw" draggable={false} loading={index > 1 ? "lazy" : "eager"} /><span><i>{String(index + 1).padStart(2, "0")}</i>{image.label}<b>＋</b></span></button>)}
+          {gallery.map((image, index) => <button className={`gallery-item ${image.orientation}`} type="button" key={image.id} onClick={() => setSelectedIndex(index)} aria-label={`Ampliar imagem: ${image.label}`}><ManagedImage src={image.src} alt={image.alt} width={1600} height={1200} sizes="(max-width: 440px) calc(100vw - 60px), (max-width: 760px) 50vw, 33vw" draggable={false} loading="lazy" /><span><i>{String(index + 1).padStart(2, "0")}</i>{image.label}<b>＋</b></span></button>)}
         </div>
         <p className="gallery-notice shell">{editorial.gallery.notice}</p>
       </section>
 
       <section className="film" id="filme" aria-labelledby="film-title">
-        <div
-          className="film-photo"
-          style={{ "--film-image": `url("${video.poster}")` } as CSSProperties}
-          aria-hidden="true"
-        />
+        <div className="film-photo" aria-hidden="true"><ManagedImage src={video.poster} alt="" fill sizes="100vw" /></div>
         <div className="shell film-content"><p className="eyebrow">{video.eyebrow}</p><h2 id="film-title"><Lines value={video.title} /></h2><p>{video.description}</p><button className="play-button" type="button" onClick={() => setFilmOpen(true)}><span aria-hidden="true">▶</span> {video.buttonLabel}</button></div>
         <div className="film-meta"><span>{video.type}</span><span>{video.enabled && video.src ? "Disponível" : video.status}</span><span>{video.language}</span></div>
       </section>
@@ -164,11 +152,7 @@ export default function SiteHome({ initialContent, preview = false }: { initialC
       </section>
 
       <section className="closing" aria-labelledby="closing-title">
-        <div
-          className="closing-photo"
-          style={{ "--closing-image": `url("${editorial.closing.backgroundImage}")` } as CSSProperties}
-          aria-hidden="true"
-        />
+        <div className="closing-photo" aria-hidden="true"><ManagedImage src={editorial.closing.backgroundImage} alt="" fill sizes="100vw" /></div>
         <div className="shell closing-content"><p className="eyebrow">{editorial.closing.eyebrow}</p><h2 id="closing-title"><Lines value={editorial.closing.title} /></h2><p>{editorial.closing.description}</p><a className="text-link" href="#inicio">Voltar ao início <span aria-hidden="true">↑</span></a></div>
       </section>
 
@@ -184,7 +168,7 @@ export default function SiteHome({ initialContent, preview = false }: { initialC
 
       {selectedImage && <div className="lightbox" role="dialog" aria-modal="true" aria-label={selectedImage.label} onClick={() => setSelectedIndex(null)}><button className="lightbox-close" type="button" onClick={() => setSelectedIndex(null)} aria-label="Fechar imagem">×</button><button className="gallery-nav gallery-nav-prev" type="button" onClick={(event) => { event.stopPropagation(); moveGallery(-1); }} aria-label="Imagem anterior">←</button><figure onClick={(event) => event.stopPropagation()} onContextMenu={(event) => event.preventDefault()}><ManagedImage src={selectedImage.src} alt={selectedImage.alt} width={2048} height={1434} sizes="(max-width: 760px) calc(100vw - 36px), 80vw" draggable={false} /><figcaption><span>{selectedImage.label}</span><b>{String((selectedIndex ?? 0) + 1).padStart(2, "0")} / {String(gallery.length).padStart(2, "0")}</b></figcaption></figure><button className="gallery-nav gallery-nav-next" type="button" onClick={(event) => { event.stopPropagation(); moveGallery(1); }} aria-label="Imagem seguinte">→</button></div>}
 
-      {filmOpen && <div className="film-modal" role="dialog" aria-modal="true" aria-label={video.enabled && video.src ? video.title : undefined} aria-labelledby={video.enabled && video.src ? undefined : "film-modal-title"} onClick={() => setFilmOpen(false)}><div className={video.enabled && video.src ? "film-player-modal" : ""} onClick={(event) => event.stopPropagation()}><button type="button" onClick={() => setFilmOpen(false)} aria-label="Fechar">×</button>{video.enabled && video.src ? <video controls autoPlay playsInline poster={video.poster} src={video.src}>O seu navegador não suporta vídeo HTML5.</video> : <><span className="film-icon" aria-hidden="true">▶</span><p className="eyebrow">{video.type}</p><h3 id="film-modal-title">O filme está em preparação.</h3><p>Este módulo está pronto para receber o documentário e os conteúdos audiovisuais oficiais da campanha.</p></>}</div></div>}
+      {filmOpen && <div className="film-modal" role="dialog" aria-modal="true" aria-label={video.enabled && video.src ? video.title : undefined} aria-labelledby={video.enabled && video.src ? undefined : "film-modal-title"} onClick={() => setFilmOpen(false)}><div className={video.enabled && video.src ? "film-player-modal" : ""} onClick={(event) => event.stopPropagation()}><button type="button" onClick={() => setFilmOpen(false)} aria-label="Fechar">×</button>{video.enabled && video.src ? <video controls autoPlay playsInline poster={optimizedMediaUrl(video.poster)} src={video.src}>O seu navegador não suporta vídeo HTML5.</video> : <><span className="film-icon" aria-hidden="true">▶</span><p className="eyebrow">{video.type}</p><h3 id="film-modal-title">O filme está em preparação.</h3><p>Este módulo está pronto para receber o documentário e os conteúdos audiovisuais oficiais da campanha.</p></>}</div></div>}
     </main>
   );
 }
@@ -206,6 +190,7 @@ function CorporateNotice({ value }: { value: string }) {
 
 function ManagedImage({ src, alt, unoptimized, ...props }: ImageProps) {
   if (typeof src === "string" && !src.trim()) return null;
-  const bypassOptimizer = typeof src === "string" && (/^(?:https?:|data:|blob:)/i.test(src) || src.startsWith("/api/"));
-  return <Image src={src} alt={alt} unoptimized={unoptimized ?? bypassOptimizer} {...props} />;
+  const resolvedSrc = typeof src === "string" ? optimizedMediaUrl(src) : src;
+  const bypassOptimizer = typeof resolvedSrc === "string" && (/^(?:https?:|data:|blob:)/i.test(resolvedSrc) || resolvedSrc.startsWith("/api/"));
+  return <Image src={resolvedSrc} alt={alt} unoptimized={unoptimized ?? bypassOptimizer} {...props} />;
 }

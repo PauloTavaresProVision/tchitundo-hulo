@@ -78,7 +78,7 @@ test("server-renders the Tchitundo-Hulo campaign", async () => {
 });
 
 test("keeps the campaign CMS-ready and Docker-ready on port 7788", async () => {
-  const [page, siteHome, admin, css, content, dockerfile, compose, analytics, cookieConsent, cookieStore] = await Promise.all([
+  const [page, siteHome, admin, css, content, dockerfile, compose, analytics, cookieConsent, cookieStore, optimizedMedia, mediaStore] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/site-home.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/page.tsx", import.meta.url), "utf8"),
@@ -89,6 +89,8 @@ test("keeps the campaign CMS-ready and Docker-ready on port 7788", async () => {
     readFile(new URL("../app/analytics-tracker.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/cookie-consent.tsx", import.meta.url), "utf8"),
     readFile(new URL("../lib/cookie-consent.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/optimized-media.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/media-store.ts", import.meta.url), "utf8"),
   ]);
 
   assert.match(page, /readSiteContent/);
@@ -98,10 +100,12 @@ test("keeps the campaign CMS-ready and Docker-ready on port 7788", async () => {
   assert.match(siteHome, /moveGallery\(-1\)/);
   assert.match(siteHome, /moveGallery\(1\)/);
   assert.match(siteHome, /video\.enabled/);
-  assert.match(siteHome, /--hero-image/);
-  assert.match(siteHome, /--impact-image/);
-  assert.match(siteHome, /--film-image/);
-  assert.match(siteHome, /--closing-image/);
+  assert.match(siteHome, /className="hero-photo"[^<]*><ManagedImage/);
+  assert.match(siteHome, /className="manifesto-image"[^<]*><ManagedImage/);
+  assert.match(siteHome, /className="film-photo"[^<]*><ManagedImage/);
+  assert.match(siteHome, /className="closing-photo"[^<]*><ManagedImage/);
+  assert.match(siteHome, /loading="lazy"/);
+  assert.match(siteHome, /optimizedMediaUrl/);
   assert.doesNotMatch(siteHome, /<img\b/);
   assert.doesNotMatch(admin, /<img\b/);
   assert.doesNotMatch(siteHome, /className="(?:hero-photo|manifesto-image|film-photo|closing-photo)" style=\{\{ backgroundImage/);
@@ -122,13 +126,15 @@ test("keeps the campaign CMS-ready and Docker-ready on port 7788", async () => {
   assert.match(analytics, /readCookiePreferences\(\)\?\.analytics === true/);
   assert.match(analytics, /COOKIE_CONSENT_EVENT/);
   assert.match(css, /\.brand \{ width: 240px;/);
-  assert.match(css, /var\(--hero-image/);
-  assert.match(css, /var\(--impact-image/);
-  assert.match(css, /var\(--film-image/);
-  assert.match(css, /var\(--closing-image/);
-  assert.equal((css.match(/var\(--impact-image/g) ?? []).length, 1);
-  assert.equal((css.match(/var\(--film-image/g) ?? []).length, 1);
-  assert.equal((css.match(/var\(--closing-image/g) ?? []).length, 1);
+  assert.match(css, /\.hero-photo img/);
+  assert.match(css, /\.manifesto-image img/);
+  assert.match(css, /\.film-photo img/);
+  assert.match(css, /\.closing-photo img/);
+  assert.doesNotMatch(css, /var\(--(?:hero|impact|film|closing)-image/);
+  assert.match(optimizedMedia, /\/media\/optimized\//);
+  assert.match(optimizedMedia, /hero-sunset-portal/);
+  assert.match(mediaStore, /import\("sharp"\)/);
+  assert.match(mediaStore, /withoutEnlargement: true/);
   assert.match(dockerfile, /EXPOSE 7788/);
   assert.match(dockerfile, /--port", "7788"/);
   assert.match(compose, /"7788:7788"/);
@@ -236,15 +242,18 @@ test("protects the backoffice with MFA, users, managed content and uploads", asy
     assert.ok(workflowBody.versions[0].changes.some((change) => change.area === "SEO"));
 
     const form = new FormData();
-    form.set("file", new File([new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10])], "teste.png", { type: "image/png" }));
+    const validPng = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64");
+    form.set("file", new File([validPng], "teste.png", { type: "image/png" }));
     const uploaded = await worker.fetch(new Request("http://localhost/api/admin/uploads", {
       method: "POST",
       headers: { Cookie: cookie, Origin: "http://localhost" },
       body: form,
     }), runtimeEnv, runtimeContext);
-    assert.equal(uploaded.status, 200);
+    assert.equal(uploaded.status, 200, await uploaded.clone().text());
     const media = await uploaded.json();
     assert.match(media.url, /^\/api\/media\//);
+    assert.equal(media.type, "image/webp");
+    assert.match(media.filename, /\.webp$/);
 
     const mediaLibrary = await worker.fetch(new Request("http://localhost/api/admin/media", { headers: { Cookie: cookie } }), runtimeEnv, runtimeContext);
     assert.equal(mediaLibrary.status, 200);

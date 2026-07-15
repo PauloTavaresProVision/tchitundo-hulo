@@ -4,6 +4,7 @@ import Image, { type ImageProps } from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { AgendaItem, CampaignArchiveItem, DocumentItem, GalleryItem, SeoSettings, SiteContent } from "@/content/site-content";
+import { optimizedMediaUrl } from "@/lib/optimized-media";
 import type { PublicBackofficeUser, UserRole } from "@/lib/users-store";
 
 type Tab = "overview" | "website" | "analytics" | "agenda" | "gallery" | "video" | "documents" | "archive" | "media" | "history" | "seo" | "users" | "audit";
@@ -872,8 +873,9 @@ function UploadField({ label, value, accept, busy, onChange, onUpload }: { label
 
 function ManagedImage({ src, alt, unoptimized, ...props }: ImageProps) {
   if (typeof src === "string" && !src.trim()) return null;
-  const bypassOptimizer = typeof src === "string" && (/^(?:https?:|data:|blob:)/i.test(src) || src.startsWith("/api/"));
-  return <Image src={src} alt={alt} unoptimized={unoptimized ?? bypassOptimizer} {...props} />;
+  const resolvedSrc = typeof src === "string" ? optimizedMediaUrl(src) : src;
+  const bypassOptimizer = typeof resolvedSrc === "string" && (/^(?:https?:|data:|blob:)/i.test(resolvedSrc) || resolvedSrc.startsWith("/api/"));
+  return <Image src={resolvedSrc} alt={alt} unoptimized={unoptimized ?? bypassOptimizer} {...props} />;
 }
 
 type ContentCollectionKey = "portals" | "gallery" | "agenda" | "documents" | "archive";

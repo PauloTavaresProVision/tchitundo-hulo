@@ -27,11 +27,26 @@ export async function saveMedia(file: File) {
   const detectedType = detectType(bytes);
   if (!detectedType || detectedType !== file.type) throw new Error("O conteúdo do ficheiro não corresponde ao formato declarado.");
 
-  const filename = `${crypto.randomUUID()}${extensionFor(detectedType)}`;
+  const prepared = await prepareMedia(bytes, detectedType);
+  const filename = `${crypto.randomUUID()}${extensionFor(prepared.type)}`;
   const directory = uploadsDirectory();
   await mkdir(directory, { recursive: true });
-  await writeFile(path.join(directory, filename), bytes, { mode: 0o600 });
-  return { filename, url: `/api/media/${encodeURIComponent(filename)}`, type: detectedType, size: file.size };
+  await writeFile(path.join(directory, filename), prepared.bytes, { mode: 0o600 });
+  return { filename, url: `/api/media/${encodeURIComponent(filename)}`, type: prepared.type, size: prepared.bytes.byteLength };
+}
+
+async function prepareMedia(bytes: Uint8Array, type: string) {
+  if (!type.startsWith("image/")) return { bytes, type };
+  const { default: sharp } = await import("sharp");
+  const image = sharp(bytes, { failOn: "error", limitInputPixels: 80_000_000, sequentialRead: true });
+  const metadata = await image.metadata();
+  if (!metadata.width || !metadata.height) throw new Error("Não foi possível ler as dimensões da imagem.");
+  const output = await image
+    .rotate()
+    .resize({ width: 2560, height: 2560, fit: "inside", withoutEnlargement: true })
+    .webp({ quality: metadata.hasAlpha ? 90 : 82, alphaQuality: 100, effort: 4, smartSubsample: true })
+    .toBuffer();
+  return { bytes: new Uint8Array(output), type: "image/webp" };
 }
 
 export async function listMedia(): Promise<MediaItem[]> {

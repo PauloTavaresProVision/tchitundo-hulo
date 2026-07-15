@@ -44,6 +44,14 @@ export default defineConfig(async () => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
+    build: {
+      rollupOptions: {
+        external: ["sharp"],
+      },
+    },
+    ssr: {
+      external: ["sharp"],
+    },
     server: isCodexSeatbeltSandbox
       ? { watch: { useFsEvents: false, usePolling: true } }
       : undefined,

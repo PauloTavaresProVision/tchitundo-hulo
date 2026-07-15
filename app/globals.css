@@ -920,30 +920,54 @@ main { background: var(--ink); }
 
 /* Hero artwork and campaign title inspired by the approved identity study. */
 .hero-photo {
-  background-image:
-    linear-gradient(90deg, rgba(2,7,16,.34) 0%, rgba(2,7,16,.16) 46%, rgba(2,7,16,.02) 76%),
-    linear-gradient(0deg, rgba(2,7,16,.38) 0%, transparent 44%),
-    var(--hero-image, url('/media/hero-sunset-portal.png'));
-  background-size: cover, cover, cover;
-  background-position: center, center, 72% 50%;
   filter: saturate(1.04) contrast(1.03);
   transform: scale(1.01);
 }
-.manifesto-image {
+.hero-photo img {
+  object-fit: cover;
+  object-position: 72% 50%;
+}
+.hero-photo::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0;
   background:
-    linear-gradient(90deg, rgba(2,9,23,.9), rgba(0,30,98,.4) 52%, rgba(2,9,23,.42)),
-    var(--impact-image, url('/media/gallery-rock-05.jpg')) center 48% / cover;
+    linear-gradient(90deg, rgba(2,7,16,.34) 0%, rgba(2,7,16,.16) 46%, rgba(2,7,16,.02) 76%),
+    linear-gradient(0deg, rgba(2,7,16,.38) 0%, transparent 44%);
+}
+.manifesto-image {
   filter: saturate(.92) contrast(1.02);
 }
+.manifesto-image img { object-fit: cover; object-position: center 48%; }
+.manifesto-image::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(2,9,23,.9), rgba(0,30,98,.4) 52%, rgba(2,9,23,.42));
+}
 .film-photo {
-  background:
-    linear-gradient(90deg, rgba(2,9,23,.98), rgba(2,9,23,.62) 50%, rgba(2,9,23,.12)),
-    var(--film-image, url('/media/community-guide.jpg')) center 42% / cover;
+  overflow: hidden;
+}
+.film-photo img { object-fit: cover; object-position: center 42%; }
+.film-photo::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(2,9,23,.98), rgba(2,9,23,.62) 50%, rgba(2,9,23,.12));
 }
 .closing-photo {
-  background:
-    linear-gradient(90deg, rgba(2,9,23,.98), rgba(0,30,98,.56) 54%, rgba(2,9,23,.12)),
-    var(--closing-image, url('/media/hero-aerial.jpg')) center 52% / cover;
+  overflow: hidden;
+}
+.closing-photo img { object-fit: cover; object-position: center 52%; }
+.closing-photo::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(2,9,23,.98), rgba(0,30,98,.56) 54%, rgba(2,9,23,.12));
 }
 .hero h1 {
   width: min(850px, 58vw);
@@ -1044,12 +1068,11 @@ main { background: var(--ink); }
 }
 
 @media (max-width: 760px) {
-  .hero-photo {
-    background-image:
+  .hero-photo img { object-position: 86% center; }
+  .hero-photo::before {
+    background:
       linear-gradient(90deg, rgba(2,7,16,.56) 0%, rgba(2,7,16,.24) 50%, rgba(2,7,16,.03) 100%),
-      linear-gradient(0deg, rgba(2,7,16,.34), transparent 52%),
-      var(--hero-image, url('/media/hero-sunset-portal.png'));
-    background-position: center, center, 86% center;
+      linear-gradient(0deg, rgba(2,7,16,.34), transparent 52%);
   }
   .hero h1 { width: 100%; font-size: clamp(46px, 13.6vw, 56px); line-height: .9; }
   .hero-title-bottom { padding-right: 0; }
