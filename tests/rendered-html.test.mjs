@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -72,6 +72,7 @@ test("server-renders the Tchitundo-Hulo campaign", async () => {
   assert.match(html, /apple-touch-icon\.png/i);
   assert.match(html, /application\/ld\+json/i);
   assert.match(html, /Agenda cultural/i);
+  assert.match(html, /\/media\/gallery-thumbnails\/community-rock\.webp/i);
   assert.match(html, /5417093386/);
   assert.match(html, /Pol.tica de cookies/i);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
@@ -106,6 +107,8 @@ test("keeps the campaign CMS-ready and Docker-ready on port 7788", async () => {
   assert.match(siteHome, /className="closing-photo"[^<]*><ManagedImage/);
   assert.match(siteHome, /loading="lazy"/);
   assert.match(siteHome, /optimizedMediaUrl/);
+  assert.match(siteHome, /galleryThumbnailUrl/);
+  assert.match(siteHome, /preload\.src = url/);
   assert.doesNotMatch(siteHome, /<img\b/);
   assert.doesNotMatch(admin, /<img\b/);
   assert.doesNotMatch(siteHome, /className="(?:hero-photo|manifesto-image|film-photo|closing-photo)" style=\{\{ backgroundImage/);
@@ -132,9 +135,12 @@ test("keeps the campaign CMS-ready and Docker-ready on port 7788", async () => {
   assert.match(css, /\.closing-photo img/);
   assert.doesNotMatch(css, /var\(--(?:hero|impact|film|closing)-image/);
   assert.match(optimizedMedia, /\/media\/optimized\//);
+  assert.match(optimizedMedia, /\/media\/gallery-thumbnails\//);
   assert.match(optimizedMedia, /hero-sunset-portal/);
   assert.match(mediaStore, /import\("sharp"\)/);
   assert.match(mediaStore, /withoutEnlargement: true/);
+  const galleryThumbnail = await stat(new URL("../public/media/gallery-thumbnails/gallery-rock-01.webp", import.meta.url));
+  assert.ok(galleryThumbnail.size < 300 * 1024);
   assert.match(dockerfile, /EXPOSE 7788/);
   assert.match(dockerfile, /--port", "7788"/);
   assert.match(compose, /"7788:7788"/);

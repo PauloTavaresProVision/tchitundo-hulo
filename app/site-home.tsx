@@ -5,13 +5,14 @@ import { useEffect, useState } from "react";
 import CookieConsent from "@/app/cookie-consent";
 import type { SiteContent } from "@/content/site-content";
 import { openCookieSettings } from "@/lib/cookie-consent";
-import { optimizedMediaUrl } from "@/lib/optimized-media";
+import { galleryThumbnailUrl, optimizedMediaUrl } from "@/lib/optimized-media";
 
 export default function SiteHome({ initialContent, preview = false }: { initialContent: SiteContent; preview?: boolean }) {
   const content = initialContent;
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [filmOpen, setFilmOpen] = useState(false);
+  const [heroReady, setHeroReady] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const { gallery, agenda, documents, archive, portals, editorial, video, legal } = content;
   const selectedImage = selectedIndex === null ? null : gallery[selectedIndex];
@@ -45,6 +46,21 @@ export default function SiteHome({ initialContent, preview = false }: { initialC
     };
   }, [selectedIndex, filmOpen, menuOpen, gallery.length]);
 
+  useEffect(() => {
+    if (!heroReady) return;
+    const thumbnailUrls = [...new Set(gallery.map((image) => galleryThumbnailUrl(image.src)))];
+    const preloaders: HTMLImageElement[] = [];
+    const timer = window.setTimeout(() => {
+      thumbnailUrls.forEach((url) => {
+        const preload = new window.Image();
+        preload.decoding = "async";
+        preload.src = url;
+        preloaders.push(preload);
+      });
+    }, 150);
+    return () => window.clearTimeout(timer);
+  }, [gallery, heroReady]);
+
   const closeMenu = () => setMenuOpen(false);
   const moveGallery = (direction: -1 | 1) => {
     if (!gallery.length) return;
@@ -58,7 +74,7 @@ export default function SiteHome({ initialContent, preview = false }: { initialC
       <div className="scroll-progress" style={{ transform: `scaleX(${scrollProgress})` }} aria-hidden="true" />
 
       <section className="hero" id="inicio" aria-labelledby="hero-title">
-        <div className="hero-photo" aria-hidden="true"><ManagedImage src={editorial.hero.backgroundImage} alt="" fill sizes="100vw" priority /></div>
+        <div className="hero-photo" aria-hidden="true"><ManagedImage src={editorial.hero.backgroundImage} alt="" fill sizes="100vw" priority onLoad={() => setHeroReady(true)} /></div>
         <div className="hero-grain" aria-hidden="true" />
         <header className="site-header shell">
           <a className="brand" href="#inicio" aria-label="Standard Bank, início"><ManagedImage src="/brand/standard-bank-logo-white-official.png" alt="Standard Bank" width={1717} height={456} sizes="(max-width: 760px) 154px, 190px" priority /></a>
@@ -124,7 +140,7 @@ export default function SiteHome({ initialContent, preview = false }: { initialC
       <section className="gallery-section section-dark" id="galeria" aria-labelledby="gallery-title">
         <div className="shell gallery-heading"><div><p className="eyebrow">{editorial.gallery.eyebrow}</p><h2 id="gallery-title"><Lines value={editorial.gallery.title} /></h2></div><p>{editorial.gallery.description}</p></div>
         <div className="gallery-grid shell" onContextMenu={(event) => event.preventDefault()}>
-          {gallery.map((image, index) => <button className={`gallery-item ${image.orientation}`} type="button" key={image.id} onClick={() => setSelectedIndex(index)} aria-label={`Ampliar imagem: ${image.label}`}><ManagedImage src={image.src} alt={image.alt} width={1600} height={1200} sizes="(max-width: 440px) calc(100vw - 60px), (max-width: 760px) 50vw, 33vw" draggable={false} loading="lazy" /><span><i>{String(index + 1).padStart(2, "0")}</i>{image.label}<b>＋</b></span></button>)}
+          {gallery.map((image, index) => <button className={`gallery-item ${image.orientation}`} type="button" key={image.id} onClick={() => setSelectedIndex(index)} aria-label={`Ampliar imagem: ${image.label}`}><ManagedImage src={galleryThumbnailUrl(image.src)} alt={image.alt} width={1200} height={900} sizes="(max-width: 440px) calc(100vw - 60px), (max-width: 760px) 50vw, 33vw" draggable={false} loading="lazy" unoptimized /><span><i>{String(index + 1).padStart(2, "0")}</i>{image.label}<b>＋</b></span></button>)}
         </div>
         <p className="gallery-notice shell">{editorial.gallery.notice}</p>
       </section>
@@ -166,7 +182,7 @@ export default function SiteHome({ initialContent, preview = false }: { initialC
 
       <div className={`mobile-menu ${menuOpen ? "open" : ""}`} aria-hidden={!menuOpen}><div className="mobile-menu-inner"><p>Explorar</p><a href="#campanha" onClick={closeMenu}>A campanha <span>01</span></a><a href="#territorio" onClick={closeMenu}>O lugar <span>02</span></a><a href="#galeria" onClick={closeMenu}>Galeria <span>03</span></a><a href="#cultura" onClick={closeMenu}>Cultura e agenda <span>04</span></a><a href="#arquivo" onClick={closeMenu}>Arquivo <span>05</span></a></div></div>
 
-      {selectedImage && <div className="lightbox" role="dialog" aria-modal="true" aria-label={selectedImage.label} onClick={() => setSelectedIndex(null)}><button className="lightbox-close" type="button" onClick={() => setSelectedIndex(null)} aria-label="Fechar imagem">×</button><button className="gallery-nav gallery-nav-prev" type="button" onClick={(event) => { event.stopPropagation(); moveGallery(-1); }} aria-label="Imagem anterior">←</button><figure onClick={(event) => event.stopPropagation()} onContextMenu={(event) => event.preventDefault()}><ManagedImage src={selectedImage.src} alt={selectedImage.alt} width={2048} height={1434} sizes="(max-width: 760px) calc(100vw - 36px), 80vw" draggable={false} /><figcaption><span>{selectedImage.label}</span><b>{String((selectedIndex ?? 0) + 1).padStart(2, "0")} / {String(gallery.length).padStart(2, "0")}</b></figcaption></figure><button className="gallery-nav gallery-nav-next" type="button" onClick={(event) => { event.stopPropagation(); moveGallery(1); }} aria-label="Imagem seguinte">→</button></div>}
+      {selectedImage && <div className="lightbox" role="dialog" aria-modal="true" aria-label={selectedImage.label} onClick={() => setSelectedIndex(null)}><button className="lightbox-close" type="button" onClick={() => setSelectedIndex(null)} aria-label="Fechar imagem">×</button><button className="gallery-nav gallery-nav-prev" type="button" onClick={(event) => { event.stopPropagation(); moveGallery(-1); }} aria-label="Imagem anterior">←</button><figure onClick={(event) => event.stopPropagation()} onContextMenu={(event) => event.preventDefault()}><ManagedImage src={selectedImage.src} alt={selectedImage.alt} width={2048} height={1434} sizes="(max-width: 760px) calc(100vw - 36px), 80vw" draggable={false} unoptimized /><figcaption><span>{selectedImage.label}</span><b>{String((selectedIndex ?? 0) + 1).padStart(2, "0")} / {String(gallery.length).padStart(2, "0")}</b></figcaption></figure><button className="gallery-nav gallery-nav-next" type="button" onClick={(event) => { event.stopPropagation(); moveGallery(1); }} aria-label="Imagem seguinte">→</button></div>}
 
       {filmOpen && <div className="film-modal" role="dialog" aria-modal="true" aria-label={video.enabled && video.src ? video.title : undefined} aria-labelledby={video.enabled && video.src ? undefined : "film-modal-title"} onClick={() => setFilmOpen(false)}><div className={video.enabled && video.src ? "film-player-modal" : ""} onClick={(event) => event.stopPropagation()}><button type="button" onClick={() => setFilmOpen(false)} aria-label="Fechar">×</button>{video.enabled && video.src ? <video controls autoPlay playsInline poster={optimizedMediaUrl(video.poster)} src={video.src}>O seu navegador não suporta vídeo HTML5.</video> : <><span className="film-icon" aria-hidden="true">▶</span><p className="eyebrow">{video.type}</p><h3 id="film-modal-title">O filme está em preparação.</h3><p>Este módulo está pronto para receber o documentário e os conteúdos audiovisuais oficiais da campanha.</p></>}</div></div>}
     </main>
