@@ -20,7 +20,7 @@
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "sharp": "^0.34.5",
-    "vinext": "0.0.50"
+    "vinext": "0.2.1"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.44.0",
