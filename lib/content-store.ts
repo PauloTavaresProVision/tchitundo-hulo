@@ -96,11 +96,20 @@ async function readContentFile(target: string, fallback: SiteContent) {
     const value = JSON.parse(await readFile(target, "utf8")) as unknown;
     const normalized = normalizeSiteContent(value);
     if (!normalized) throw new Error("Invalid content structure");
-    return normalized;
+    return migrateLegacyVideo(normalized);
   } catch (error) {
     if (isMissingFile(error)) return fallback;
     throw error;
   }
+}
+
+function migrateLegacyVideo(content: SiteContent): SiteContent {
+  const isOriginalPlaceholder = !content.video.enabled
+    && !content.video.src
+    && content.video.status === "Em preparação"
+    && content.video.buttonLabel === "Ver apresentação do filme";
+  if (!isOriginalPlaceholder) return content;
+  return { ...content, video: structuredClone(defaultSiteContent().video) };
 }
 
 async function readHistory(): Promise<ContentVersion[]> {

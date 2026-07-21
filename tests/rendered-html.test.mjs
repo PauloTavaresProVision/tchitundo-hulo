@@ -79,12 +79,13 @@ test("server-renders the Tchitundo-Hulo campaign", async () => {
 });
 
 test("keeps the campaign CMS-ready and Docker-ready on port 7788", async () => {
-  const [page, siteHome, admin, css, content, dockerfile, compose, analytics, cookieConsent, cookieStore, optimizedMedia, mediaStore] = await Promise.all([
+  const [page, siteHome, admin, css, content, contentStore, dockerfile, compose, analytics, cookieConsent, cookieStore, optimizedMedia, mediaStore] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/site-home.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../content/site-content.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/content-store.ts", import.meta.url), "utf8"),
     readFile(new URL("../Dockerfile", import.meta.url), "utf8"),
     readFile(new URL("../compose.yaml", import.meta.url), "utf8"),
     readFile(new URL("../app/analytics-tracker.tsx", import.meta.url), "utf8"),
@@ -101,6 +102,7 @@ test("keeps the campaign CMS-ready and Docker-ready on port 7788", async () => {
   assert.match(siteHome, /moveGallery\(-1\)/);
   assert.match(siteHome, /moveGallery\(1\)/);
   assert.match(siteHome, /video\.enabled/);
+  assert.match(siteHome, /preload="metadata"/);
   assert.match(siteHome, /className="hero-photo"[^<]*><ManagedImage/);
   assert.match(siteHome, /className="manifesto-image"[^<]*><ManagedImage/);
   assert.match(siteHome, /className="film-photo"[^<]*><ManagedImage/);
@@ -119,6 +121,10 @@ test("keeps the campaign CMS-ready and Docker-ready on port 7788", async () => {
   assert.match(admin, /new-user-modal/);
   assert.match(admin, /Criar como rascunho/);
   assert.match(content, /export const siteContent/);
+  assert.match(content, /\/media\/documentario-tchitundo-hulo\.mp4/);
+  assert.match(content, /enabled: true/);
+  assert.match(contentStore, /migrateLegacyVideo/);
+  assert.match(contentStore, /Ver apresentação do filme/);
   assert.match(content, /5417093386/);
   assert.match(content, /Gest%C3%A3o-de-Cookies/);
   assert.match(siteHome, /openCookieSettings/);
