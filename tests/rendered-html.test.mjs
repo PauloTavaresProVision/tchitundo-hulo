@@ -22,10 +22,10 @@ async function getWorker() {
   return (await import(workerUrl.href)).default;
 }
 
-async function render() {
+async function render(pathname = "/") {
   const worker = await getWorker();
   return worker.fetch(
-    new Request("http://localhost/", {
+    new Request(`http://localhost${pathname}`, {
       headers: { accept: "text/html" },
     }),
     runtimeEnv,
@@ -55,27 +55,41 @@ function totpCode(secret) {
   return String(value % 1_000_000).padStart(6, "0");
 }
 
-test("server-renders the Tchitundo-Hulo campaign", async () => {
+test("server-renders the Tchitundu-Hulu campaign", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
   assert.match(response.headers.get("content-security-policy") ?? "", /frame-ancestors 'none'/);
+  assert.match(response.headers.get("content-security-policy") ?? "", /frame-src https:\/\/www\.youtube-nocookie\.com/);
   assert.equal(response.headers.get("x-frame-options"), "DENY");
   assert.equal(response.headers.get("x-content-type-options"), "nosniff");
 
   const html = await response.text();
-  assert.match(html, /<title>Tchitundo-Hulo \| Standard Bank Angola<\/title>/i);
-  assert.match(html, /Tchitundo-/i);
+  assert.match(html, /<title>Tchitundu-Hulu \| Standard Bank Angola<\/title>/i);
+  assert.match(html, /Tchitundu-Hulu/i);
   assert.match(html, /Marcas na pedra\. Memória viva\./i);
   assert.match(html, /standard-bank-logo-white-official\.png/i);
   assert.match(html, /favicon-32x32\.png/i);
   assert.match(html, /apple-touch-icon\.png/i);
   assert.match(html, /application\/ld\+json/i);
-  assert.match(html, /Agenda cultural/i);
+  assert.match(html, /Notícias/i);
   assert.match(html, /\/media\/gallery-thumbnails\/community-rock\.webp/i);
   assert.match(html, /5417093386/);
   assert.match(html, /Pol.tica de cookies/i);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
+});
+
+test("server-renders the English campaign and language switcher", async () => {
+  const response = await render("/en");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /lang="en"/i);
+  assert.match(html, /Marks in stone\. Living memory\./i);
+  assert.match(html, /News/i);
+  assert.match(html, /A visual archive of the territory/i);
+  assert.match(html, /href="\/"/i);
+  assert.doesNotMatch(html, /Agenda cultural/i);
 });
 
 test("keeps the campaign CMS-ready and Docker-ready on port 7788", async () => {
@@ -99,6 +113,12 @@ test("keeps the campaign CMS-ready and Docker-ready on port 7788", async () => {
   assert.match(page, /initialContent/);
   assert.match(siteHome, /gallery\.map/);
   assert.match(siteHome, /agenda\.map/);
+  assert.match(siteHome, /publishedNews\.map/);
+  assert.match(siteHome, /settings\.agendaEnabled/);
+  assert.match(siteHome, /settings\.languageSwitcherEnabled/);
+  assert.match(siteHome, /publicNewsPath\(locale/);
+  assert.match(siteHome, /gallery-download/);
+  assert.match(siteHome, /youtubeEmbedUrl/);
   assert.match(siteHome, /moveGallery\(-1\)/);
   assert.match(siteHome, /moveGallery\(1\)/);
   assert.match(siteHome, /video\.enabled/);
@@ -119,9 +139,12 @@ test("keeps the campaign CMS-ready and Docker-ready on port 7788", async () => {
   assert.match(admin, /Identifica..o legal do Banco/);
   assert.match(admin, /Diferenças para o website actual/);
   assert.match(admin, /new-user-modal/);
+  assert.match(admin, /editingLocale/);
   assert.match(admin, /Criar como rascunho/);
   assert.match(content, /export const siteContent/);
-  assert.match(content, /\/media\/documentario-tchitundo-hulo\.mp4/);
+  assert.match(content, /translations:/);
+  assert.match(content, /languageSwitcherEnabled: true/);
+  assert.match(content, /youtube\.com\/watch\?v=RXZhH_Ide44/);
   assert.match(content, /enabled: true/);
   assert.match(contentStore, /migrateLegacyVideo/);
   assert.match(contentStore, /Ver apresentação do filme/);
@@ -224,8 +247,17 @@ test("protects the backoffice with MFA, users, managed content and uploads", asy
     assert.equal(initial.status, 200);
     const content = await initial.json();
     assert.equal(content.seo.indexable, true);
+    assert.equal(content.settings.agendaEnabled, false);
+    assert.equal(content.settings.newsEnabled, true);
+    assert.equal(content.settings.languageSwitcherEnabled, true);
+    assert.equal(content.translations.en.editorial.hero.lead, "Marks in stone. Living memory.");
+    assert.ok(content.news.length >= 1);
     content.agenda[0].title = "Agenda actualizada no backoffice";
-    content.seo.title = "Tchitundo-Hulo: Património Cultural de Angola";
+    content.news[0].title = "Notícia actualizada no backoffice";
+    content.news[0].published = true;
+    content.translations.en.news[0].title = "News updated in the backoffice";
+    content.translations.en.news[0].published = true;
+    content.seo.title = "Tchitundu-Hulu: Património Cultural de Angola";
 
     const saved = await worker.fetch(new Request("http://localhost/api/admin/content", {
       method: "PUT",
@@ -251,6 +283,7 @@ test("protects the backoffice with MFA, users, managed content and uploads", asy
     assert.equal(workflowBody.versions.length, 1);
     assert.ok(workflowBody.versions[0].totalChanges >= 2);
     assert.ok(workflowBody.versions[0].changes.some((change) => change.area === "Agenda cultural"));
+    assert.ok(workflowBody.versions[0].changes.some((change) => change.area === "Notícias"));
     assert.ok(workflowBody.versions[0].changes.some((change) => change.area === "SEO"));
 
     const form = new FormData();
@@ -300,7 +333,10 @@ test("protects the backoffice with MFA, users, managed content and uploads", asy
 
     const publicContent = await worker.fetch(new Request("http://localhost/api/content"), runtimeEnv, runtimeContext);
     assert.equal(publicContent.status, 200);
-    assert.equal((await publicContent.json()).agenda[0].title, "Agenda actualizada no backoffice");
+    const publicBody = await publicContent.json();
+    assert.equal(publicBody.agenda[0].title, "Agenda actualizada no backoffice");
+    assert.equal(publicBody.translations.en.news[0].title, "News updated in the backoffice");
+    assert.equal(publicBody.news[0].title, "Notícia actualizada no backoffice");
 
     const analyticsHeaders = { "Content-Type": "application/json", Origin: "http://localhost" };
     const visit = await worker.fetch(new Request("http://localhost/api/analytics/visit", {
@@ -340,7 +376,11 @@ test("protects the backoffice with MFA, users, managed content and uploads", asy
 
     const sitemap = await worker.fetch(new Request("http://localhost/sitemap.xml"), runtimeEnv, runtimeContext);
     assert.equal(sitemap.status, 200);
-    assert.match(await sitemap.text(), /<urlset/);
+    const sitemapText = await sitemap.text();
+    assert.match(sitemapText, /<urlset/);
+    assert.match(sitemapText, /<loc>http:\/\/localhost\/en<\/loc>/);
+    assert.match(sitemapText, /\/noticias\/standard-bank-valoriza-tchitundu-hulu/);
+    assert.match(sitemapText, /\/en\/news\/standard-bank-celebrates-tchitundu-hulu/);
 
     const createdUser = await worker.fetch(new Request("http://localhost/api/admin/users", {
       method: "POST",

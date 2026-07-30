@@ -61,7 +61,7 @@ function withSecurityHeaders(response: Response, request: Request) {
     "font-src 'self' data:",
     "connect-src 'self'",
     "media-src 'self' https:",
-    "frame-src 'none'",
+    "frame-src https://www.youtube-nocookie.com",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

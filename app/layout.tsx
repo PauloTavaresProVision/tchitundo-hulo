@@ -8,16 +8,23 @@ export async function generateMetadata(): Promise<Metadata> {
   const { origin } = await requestOrigin();
   const content = await readSiteContent().catch(() => null);
   const seo = content?.seo;
-  const title = seo?.title || "Tchitundo-Hulo | Standard Bank Angola";
+  const title = seo?.title || "Tchitundu-Hulu | Standard Bank Angola";
   const description = seo?.description || "Uma plataforma editorial dedicada ao património, à memória e ao futuro de Angola.";
   const canonical = seo?.canonicalUrl?.trim() || origin;
-  const socialImage = absoluteUrl(seo?.ogImage || "/og.png", origin);
+  const englishCanonical = content?.translations.en.seo.canonicalUrl?.trim() || `${canonical.replace(/\/$/, "")}/en`;
+  const socialImage = absoluteUrl(seo?.ogImage || "/media/hero-sunset-portal.png", origin);
 
   return {
     title,
     description,
     keywords: seo?.keywords.split(",").map((keyword) => keyword.trim()).filter(Boolean),
-    alternates: { canonical },
+    alternates: {
+      canonical,
+      languages: {
+        "pt-AO": canonical,
+        en: englishCanonical,
+      },
+    },
     robots: seo?.indexable === false ? { index: false, follow: false } : { index: true, follow: true },
     icons: {
       icon: [
@@ -50,11 +57,11 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    name: seo?.title || "Tchitundo-Hulo | Standard Bank Angola",
+    name: seo?.title || "Tchitundu-Hulu | Standard Bank Angola",
     description: seo?.description || "Uma plataforma editorial dedicada ao património cultural angolano.",
     url: canonical,
     inLanguage: "pt-AO",
-    isPartOf: { "@type": "WebSite", name: "Tchitundo-Hulo", url: origin },
+    isPartOf: { "@type": "WebSite", name: "Tchitundu-Hulu", url: origin },
     publisher: {
       "@type": "Organization",
       name: "Standard Bank Angola",
@@ -65,6 +72,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang="pt-AO">
       <body>
+        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.lang=location.pathname.startsWith('/en')?'en':'pt-AO'" }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} />
         {children}
         <AnalyticsTracker />
@@ -94,6 +102,6 @@ function absoluteUrl(value: string, origin: string) {
   try {
     return new URL(value, origin).toString();
   } catch {
-    return `${origin}/og.png`;
+    return `${origin}/media/hero-sunset-portal.png`;
   }
 }

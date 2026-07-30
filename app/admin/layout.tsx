@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./admin.css";
 
 export const metadata: Metadata = {
-  title: "Backoffice | Tchitundo-Hulo",
+  title: "Backoffice | Tchitundu-Hulu",
   robots: { index: false, follow: false },
   icons: {
     icon: [

@@ -3,11 +3,12 @@
 import Image, { type ImageProps } from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import type { AgendaItem, CampaignArchiveItem, DocumentItem, GalleryItem, SeoSettings, SiteContent } from "@/content/site-content";
+import type { CampaignArchiveItem, DocumentItem, GalleryItem, SeoSettings, SiteContent, SiteLocale } from "@/content/site-content";
 import { optimizedMediaUrl } from "@/lib/optimized-media";
+import { adminContentForLocale, localizedFields, publicHomePath } from "@/lib/site-locale";
 import type { PublicBackofficeUser, UserRole } from "@/lib/users-store";
 
-type Tab = "overview" | "website" | "analytics" | "agenda" | "gallery" | "video" | "documents" | "archive" | "media" | "history" | "seo" | "users" | "audit";
+type Tab = "overview" | "website" | "analytics" | "agenda" | "news" | "gallery" | "video" | "documents" | "archive" | "media" | "history" | "seo" | "users" | "audit";
 type Notice = { type: "success" | "error"; message: string } | null;
 type AuthStage = "credentials" | "password" | "mfa" | "setup";
 type MfaSetup = { secret: string; uri: string; qrCode: string };
@@ -15,6 +16,7 @@ type MfaSetup = { secret: string; uri: string; qrCode: string };
 const baseTabs: Array<{ id: Tab; label: string; symbol: string }> = [
   { id: "overview", label: "Visão geral", symbol: "◫" },
   { id: "website", label: "Website", symbol: "▣" },
+  { id: "news", label: "Notícias", symbol: "▤" },
   { id: "agenda", label: "Agenda cultural", symbol: "◇" },
   { id: "gallery", label: "Galeria", symbol: "▦" },
   { id: "video", label: "Vídeo", symbol: "▷" },
@@ -37,11 +39,31 @@ export default function AdminPage() {
   const [authStage, setAuthStage] = useState<AuthStage>("credentials");
   const [mfaSetup, setMfaSetup] = useState<MfaSetup | null>(null);
   const [content, setContent] = useState<SiteContent | null>(null);
+  const [editingLocale, setEditingLocale] = useState<SiteLocale>("pt");
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
   const [notice, setNotice] = useState<Notice>(null);
   const tabs = role === "admin" ? [...baseTabs, usersTab, auditTab] : baseTabs;
+  const localizedContent = content ? adminContentForLocale(content, editingLocale) : null;
+
+  const setLocalizedContent = useCallback<React.Dispatch<React.SetStateAction<SiteContent | null>>>((update) => {
+    setContent((current) => {
+      if (!current) return current;
+      const editable = adminContentForLocale(current, editingLocale);
+      const next = typeof update === "function" ? update(editable) : update;
+      if (!next) return current;
+      if (editingLocale === "pt") return { ...next, translations: current.translations };
+      return {
+        ...current,
+        settings: next.settings,
+        translations: {
+          ...current.translations,
+          en: localizedFields(next),
+        },
+      };
+    });
+  }, [editingLocale]);
 
   const loadContent = useCallback(async () => {
     const response = await fetch("/api/admin/content", { cache: "no-store" });
@@ -213,7 +235,7 @@ export default function AdminPage() {
 
   if (booting) return <AdminLoading />;
   if (!authenticated) return <AdminLogin configured={configured} stage={authStage} setup={mfaSetup} notice={notice} onSubmit={login} onPassword={changePassword} onVerify={verifyMfa} onBack={restartLogin} />;
-  if (!content) return <AdminLoading />;
+  if (!content || !localizedContent) return <AdminLoading />;
 
   return (
     <div className="admin-shell">
@@ -243,8 +265,9 @@ export default function AdminPage() {
             <h1>{tabs.find((tab) => tab.id === activeTab)?.label}</h1>
           </div>
           <div className="admin-actions">
-            <Link href="/" target="_blank" rel="noreferrer">Ver publicado ↗</Link>
-            <Link href="/preview" target="_blank" rel="noreferrer">Pré-visualizar ↗</Link>
+            <div className="admin-locale-control" role="group" aria-label="Idioma do conteúdo"><span>Conteúdo</span><button className={editingLocale === "pt" ? "active" : ""} type="button" onClick={() => setEditingLocale("pt")}>PT</button><button className={editingLocale === "en" ? "active" : ""} type="button" onClick={() => setEditingLocale("en")}>EN</button></div>
+            <Link href={publicHomePath(editingLocale)} target="_blank" rel="noreferrer">Ver publicado ↗</Link>
+            <Link href={`/preview?lang=${editingLocale}`} target="_blank" rel="noreferrer">Pré-visualizar ↗</Link>
             {!(["overview", "users", "audit", "media", "history", "analytics"] as Tab[]).includes(activeTab) && <><button className="secondary" onClick={save} disabled={saving}>{saving ? "A guardar…" : "Guardar rascunho"}</button><button className="primary" onClick={publish} disabled={saving}>Publicar</button></>}
           </div>
         </header>
@@ -252,17 +275,18 @@ export default function AdminPage() {
         {notice && <div className={`admin-notice ${notice.type}`} role="status">{notice.message}</div>}
 
         <section className="admin-workspace">
-          {activeTab === "overview" && <Overview content={content} onNavigate={setActiveTab} />}
-          {activeTab === "website" && <WebsiteEditor content={content} setContent={setContent} upload={upload} uploading={uploading} />}
+          {activeTab === "overview" && <Overview content={localizedContent} onNavigate={setActiveTab} />}
+          {activeTab === "website" && <WebsiteEditor content={localizedContent} setContent={setLocalizedContent} upload={upload} uploading={uploading} />}
           {activeTab === "analytics" && <AnalyticsDashboard />}
-          {activeTab === "agenda" && <AgendaEditor items={content.agenda} setContent={setContent} upload={upload} uploading={uploading} />}
-          {activeTab === "gallery" && <GalleryEditor items={content.gallery} setContent={setContent} upload={upload} uploading={uploading} />}
-          {activeTab === "video" && <VideoEditor content={content} setContent={setContent} upload={upload} uploading={uploading} />}
-          {activeTab === "documents" && <DocumentsEditor items={content.documents} setContent={setContent} upload={upload} uploading={uploading} />}
-          {activeTab === "archive" && <ArchiveEditor items={content.archive} setContent={setContent} />}
+          {activeTab === "agenda" && <AgendaEditor content={localizedContent} setContent={setLocalizedContent} upload={upload} uploading={uploading} />}
+          {activeTab === "news" && <NewsEditor content={localizedContent} setContent={setLocalizedContent} upload={upload} uploading={uploading} />}
+          {activeTab === "gallery" && <GalleryEditor items={localizedContent.gallery} setContent={setLocalizedContent} upload={upload} uploading={uploading} />}
+          {activeTab === "video" && <VideoEditor content={localizedContent} setContent={setLocalizedContent} upload={upload} uploading={uploading} />}
+          {activeTab === "documents" && <DocumentsEditor items={localizedContent.documents} setContent={setLocalizedContent} upload={upload} uploading={uploading} />}
+          {activeTab === "archive" && <ArchiveEditor items={localizedContent.archive} setContent={setLocalizedContent} />}
           {activeTab === "media" && <MediaLibrary role={role} />}
           {activeTab === "history" && <HistoryEditor setContent={setContent} setNotice={setNotice} />}
-          {activeTab === "seo" && <SeoEditor seo={content.seo} setContent={setContent} upload={upload} uploading={uploading} />}
+          {activeTab === "seo" && <SeoEditor seo={localizedContent.seo} setContent={setLocalizedContent} upload={upload} uploading={uploading} />}
           {activeTab === "users" && role === "admin" && <UsersEditor currentUsername={username} />}
           {activeTab === "audit" && role === "admin" && <AuditViewer />}
         </section>
@@ -276,7 +300,7 @@ function AdminLogin({ configured, stage, setup, notice, onSubmit, onPassword, on
     <main className="admin-login-page">
       <section className="admin-login-art">
         <ManagedImage src="/brand/standard-bank-logo-white-official.png" alt="Standard Bank" width={1717} height={456} sizes="190px" priority />
-        <div><p>Plataforma editorial</p><h1>Tchitundo-Hulo</h1><span>Património · Identidade · Futuro</span></div>
+        <div><p>Plataforma editorial</p><h1>Tchitundu-Hulu</h1><span>Património · Identidade · Futuro</span></div>
       </section>
       <section className="admin-login-panel">
         <form key={stage} onSubmit={stage === "credentials" ? onSubmit : stage === "password" ? onPassword : onVerify}>
@@ -316,7 +340,7 @@ function AdminLoading() {
 
 function Overview({ content, onNavigate }: { content: SiteContent; onNavigate: (tab: Tab) => void }) {
   const cards = [
-    { tab: "agenda" as Tab, value: content.agenda.length, label: "Eventos na agenda", symbol: "◇" },
+    { tab: "news" as Tab, value: content.news.filter((item) => item.published).length, label: "Notícias publicadas", symbol: "▤" },
     { tab: "gallery" as Tab, value: content.gallery.length, label: "Imagens na galeria", symbol: "▦" },
     { tab: "documents" as Tab, value: content.documents.length, label: "Documentos", symbol: "▤" },
     { tab: "archive" as Tab, value: content.archive.length, label: "Campanhas", symbol: "◎" },
@@ -326,8 +350,8 @@ function Overview({ content, onNavigate }: { content: SiteContent; onNavigate: (
       <div className="overview-intro"><div><p className="admin-kicker">Conteúdo centralizado</p><h2>A memória continua<br />a ser construída.</h2></div><p>Esta área controla as colecções editoriais que alimentam o website público. As alterações ficam em rascunho até escolher Publicar.</p></div>
       <div className="metric-grid">{cards.map((card) => <button key={card.tab} onClick={() => onNavigate(card.tab)}><i>{card.symbol}</i><strong>{String(card.value).padStart(2, "0")}</strong><span>{card.label}</span><b>→</b></button>)}</div>
       <div className="overview-panels">
-        <article><p className="admin-kicker">Agenda em destaque</p><h3>{content.agenda[0]?.title ?? "Sem eventos"}</h3><span>{content.agenda[0]?.status ?? "Adicione o primeiro evento"}</span><button onClick={() => onNavigate("agenda")}>Gerir agenda →</button></article>
-        <article className="overview-image" style={{ backgroundImage: `linear-gradient(0deg, rgba(2,9,23,.9), transparent), url(${content.gallery[0]?.src ?? "/media/community-rock.jpg"})` }}><p>Galeria editorial</p><strong>{content.gallery[0]?.label ?? "Tchitundo-Hulo"}</strong><button onClick={() => onNavigate("gallery")}>Editar galeria →</button></article>
+        <article><p className="admin-kicker">Notícia em destaque</p><h3>{content.news[0]?.title ?? "Sem notícias"}</h3><span>{content.news[0]?.published ? "Publicada" : "Em rascunho"}</span><button onClick={() => onNavigate("news")}>Gerir notícias →</button></article>
+        <article className="overview-image" style={{ backgroundImage: `linear-gradient(0deg, rgba(2,9,23,.9), transparent), url(${content.gallery[0]?.src ?? "/media/community-rock.jpg"})` }}><p>Galeria editorial</p><strong>{content.gallery[0]?.label ?? "Tchitundu-Hulu"}</strong><button onClick={() => onNavigate("gallery")}>Editar galeria →</button></article>
       </div>
     </div>
   );
@@ -344,13 +368,14 @@ function WebsiteEditor({ content, setContent, upload, uploading }: { content: Si
 
   return <div className="admin-collection website-editor">
     <header><div><h2>Conteúdo do website</h2><p>Edite os textos, imagens e ligações institucionais sem alterar o design.</p></div></header>
+    <section className="section-visibility language-visibility"><div><p className="admin-kicker">Website bilingue</p><h3>Português e inglês</h3><p>Os botões PT e EN no topo do backoffice permitem editar cada versão. Este controlo apresenta ou oculta o seletor no website público.</p></div><label className="toggle-field"><input type="checkbox" checked={content.settings.languageSwitcherEnabled} onChange={(event) => setContent((current) => current ? ({ ...current, settings: { ...current.settings, languageSwitcherEnabled: event.target.checked } }) : current)} /><span />{content.settings.languageSwitcherEnabled ? "Seletor PT / EN visível" : "Seletor de idioma oculto"}</label></section>
     <div className="website-editor-grid">
       <EditorialPanel number="01" title="Hero inicial">
         <Field label="Linha institucional" value={content.editorial.hero.eyebrow} onChange={(value) => updateSection("hero", "eyebrow", value)} />
         <Field label="Mensagem" value={content.editorial.hero.lead} onChange={(value) => updateSection("hero", "lead", value)} />
         <Field label="Botão" value={content.editorial.hero.ctaLabel} onChange={(value) => updateSection("hero", "ctaLabel", value)} />
         <UploadField label="Fotografia de fundo" value={content.editorial.hero.backgroundImage} busy={uploading === "hero-background"} accept="image/*" onUpload={(file) => void imageUpload("hero", "backgroundImage", "hero-background", file)} onChange={(value) => updateSection("hero", "backgroundImage", value)} />
-        <UploadField label="Lettering Tchitundo-Hulo" value={content.editorial.hero.titleImage} busy={uploading === "hero-lettering"} accept="image/*" onUpload={(file) => void imageUpload("hero", "titleImage", "hero-lettering", file)} onChange={(value) => updateSection("hero", "titleImage", value)} />
+        <UploadField label="Lettering Tchitundu-Hulu" value={content.editorial.hero.titleImage} busy={uploading === "hero-lettering"} accept="image/*" onUpload={(file) => void imageUpload("hero", "titleImage", "hero-lettering", file)} onChange={(value) => updateSection("hero", "titleImage", value)} />
         <div className="field-row">{content.portals.map((portal, index) => <Field key={portal.id} label={`Entrada ${index + 1}`} value={portal.label} onChange={(value) => updatePortal(index, value)} />)}</div>
       </EditorialPanel>
 
@@ -380,6 +405,7 @@ function WebsiteEditor({ content, setContent, upload, uploading }: { content: Si
 
       <EditorialPanel number="05" title="Títulos editoriais">
         <Field label="Título da galeria" value={content.editorial.gallery.title} multiline onChange={(value) => updateSection("gallery", "title", value)} /><Field label="Descrição da galeria" value={content.editorial.gallery.description} multiline onChange={(value) => updateSection("gallery", "description", value)} />
+        <Field label="Título das notícias" value={content.editorial.news.title} multiline onChange={(value) => updateSection("news", "title", value)} /><Field label="Descrição das notícias" value={content.editorial.news.description} multiline onChange={(value) => updateSection("news", "description", value)} />
         <Field label="Título da agenda" value={content.editorial.culture.title} multiline onChange={(value) => updateSection("culture", "title", value)} /><Field label="Descrição da agenda" value={content.editorial.culture.description} multiline onChange={(value) => updateSection("culture", "description", value)} /><Field label="Estado da agenda" value={content.editorial.culture.status} onChange={(value) => updateSection("culture", "status", value)} />
         <Field label="Título dos documentos" value={content.editorial.documents.title} multiline onChange={(value) => updateSection("documents", "title", value)} />
         <Field label="Título do arquivo" value={content.editorial.archive.title} multiline onChange={(value) => updateSection("archive", "title", value)} /><Field label="Descrição do arquivo" value={content.editorial.archive.description} multiline onChange={(value) => updateSection("archive", "description", value)} />
@@ -411,16 +437,19 @@ function VideoEditor({ content, setContent, upload, uploading }: { content: Site
       <div className="field-row"><Field label="Botão" value={content.video.buttonLabel} onChange={(value) => update("buttonLabel", value)} /><Field label="Estado" value={content.video.status} onChange={(value) => update("status", value)} /></div>
       <div className="field-row"><Field label="Tipo" value={content.video.type} onChange={(value) => update("type", value)} /><Field label="Idioma" value={content.video.language} onChange={(value) => update("language", value)} /></div>
       <UploadField label="Imagem de capa" value={content.video.poster} busy={uploading === "video-poster"} accept="image/*" onUpload={async (file) => { const url = await upload(file, "video-poster"); if (url) update("poster", url); }} onChange={(value) => update("poster", value)} />
-      <UploadField label="Ficheiro MP4 ou URL" value={content.video.src} busy={uploading === "campaign-video"} accept="video/mp4" onUpload={async (file) => { const url = await upload(file, "campaign-video"); if (url) update("src", url); }} onChange={(value) => update("src", value)} />
+      <UploadField label="URL do YouTube ou ficheiro MP4" value={content.video.src} busy={uploading === "campaign-video"} accept="video/mp4" onUpload={async (file) => { const url = await upload(file, "campaign-video"); if (url) update("src", url); }} onChange={(value) => update("src", value)} />
       <label className="toggle-field"><input type="checkbox" checked={content.video.enabled} disabled={!content.video.src} onChange={(event) => update("enabled", event.target.checked)} /><span />Disponibilizar o vídeo no website</label>
       {!content.video.src && <p className="admin-help">Pode guardar e publicar esta secção sem vídeo. Quando receber o ficheiro, carregue-o aqui e active a opção.</p>}
     </div></div>
   </div>;
 }
 
-function AgendaEditor({ items, setContent, upload, uploading }: EditorProps<AgendaItem>) {
+function AgendaEditor({ content, setContent, upload, uploading }: { content: SiteContent; setContent: React.Dispatch<React.SetStateAction<SiteContent | null>>; upload: (file: File, target: string) => Promise<string | null>; uploading: string | null }) {
+  const items = content.agenda;
   const add = () => setContent((current) => current && ({ ...current, agenda: [...current.agenda, { id: uniqueId("evento"), number: String(current.agenda.length + 1).padStart(2, "0"), type: "Evento", title: "Novo evento", detail: "Descrição do evento", status: "Em preparação", image: "/media/community-rock.jpg" }] }));
-  return <Collection title="Agenda cultural" description="Crie e actualize eventos, experiências e conteúdos pedagógicos." onAdd={add} addLabel="Novo evento">
+  return <div className="collection-stack">
+    <section className="section-visibility"><div><p className="admin-kicker">Visibilidade pública</p><h3>Agenda cultural</h3><p>A agenda permanece guardada no backoffice mesmo quando está oculta no website.</p></div><label className="toggle-field"><input type="checkbox" checked={content.settings.agendaEnabled} onChange={(event) => setContent((current) => current ? ({ ...current, settings: { ...current.settings, agendaEnabled: event.target.checked } }) : current)} /><span />{content.settings.agendaEnabled ? "Agenda visível" : "Agenda oculta"}</label></section>
+    <Collection title="Conteúdos da agenda" description="Crie e actualize eventos, experiências e conteúdos pedagógicos." onAdd={add} addLabel="Novo evento">
     {items.map((item, index) => <EditorCard key={item.id} index={index} title={item.title} image={item.image} onDelete={() => removeItem(setContent, "agenda", index)} onMoveUp={index > 0 ? () => moveItem(setContent, "agenda", index, -1) : undefined} onMoveDown={index < items.length - 1 ? () => moveItem(setContent, "agenda", index, 1) : undefined}>
       <div className="field-row"><Field label="Número" value={item.number} onChange={(value) => updateItem(setContent, "agenda", index, "number", value)} /><Field label="Tipo" value={item.type} onChange={(value) => updateItem(setContent, "agenda", index, "type", value)} /></div>
       <Field label="Título" value={item.title} onChange={(value) => updateItem(setContent, "agenda", index, "title", value)} />
@@ -428,11 +457,44 @@ function AgendaEditor({ items, setContent, upload, uploading }: EditorProps<Agen
       <Field label="Estado ou data" value={item.status} onChange={(value) => updateItem(setContent, "agenda", index, "status", value)} />
       <UploadField label="Imagem" value={item.image} busy={uploading === `agenda-${index}`} accept="image/*" onUpload={async (file) => { const url = await upload(file, `agenda-${index}`); if (url) updateItem(setContent, "agenda", index, "image", url); }} onChange={(value) => updateItem(setContent, "agenda", index, "image", value)} />
     </EditorCard>)}
-  </Collection>;
+    </Collection>
+  </div>;
+}
+
+function NewsEditor({ content, setContent, upload, uploading }: { content: SiteContent; setContent: React.Dispatch<React.SetStateAction<SiteContent | null>>; upload: (file: File, target: string) => Promise<string | null>; uploading: string | null }) {
+  const items = content.news;
+  const add = () => setContent((current) => current && ({ ...current, news: [...current.news, {
+    id: uniqueId("noticia"),
+    slug: uniqueId("nova-noticia"),
+    category: "Campanha",
+    title: "Nova notícia",
+    summary: "Resumo da notícia",
+    body: "Escreva aqui o conteúdo completo da notícia.",
+    publishedAt: new Date().toISOString().slice(0, 10),
+    image: "/media/community-rock.jpg",
+    imageAlt: "Imagem editorial de Tchitundu-Hulu",
+    published: false,
+  }] }));
+  const newsEnabled = content.settings.newsEnabled;
+  return <div className="collection-stack news-editor">
+    <section className="section-visibility"><div><p className="admin-kicker">Visibilidade pública</p><h3>Secção Notícias</h3><p>O menu e a secção pública podem ser ocultados sem eliminar as notícias.</p></div><label className="toggle-field"><input type="checkbox" checked={newsEnabled} onChange={(event) => setContent((current) => current ? ({ ...current, settings: { ...current.settings, newsEnabled: event.target.checked } }) : current)} /><span />{newsEnabled ? "Notícias visíveis" : "Notícias ocultas"}</label></section>
+    <Collection title="Notícias" description="Crie, organize e publique conteúdos da campanha." onAdd={add} addLabel="Nova notícia">
+      {items.map((item, index) => <EditorCard key={item.id} index={index} title={item.title} image={item.image} onDelete={() => removeItem(setContent, "news", index)} onMoveUp={index > 0 ? () => moveItem(setContent, "news", index, -1) : undefined} onMoveDown={index < items.length - 1 ? () => moveItem(setContent, "news", index, 1) : undefined}>
+        <div className="field-row"><Field label="Categoria" value={item.category} onChange={(value) => updateItem(setContent, "news", index, "category", value)} /><Field label="Data · AAAA-MM-DD" value={item.publishedAt} onChange={(value) => updateItem(setContent, "news", index, "publishedAt", value)} /></div>
+        <Field label="Título" value={item.title} onChange={(value) => updateItem(setContent, "news", index, "title", value)} />
+        <Field label="Endereço da notícia" value={item.slug} onChange={(value) => updateItem(setContent, "news", index, "slug", slugify(value))} />
+        <Field label="Resumo" value={item.summary} multiline onChange={(value) => updateItem(setContent, "news", index, "summary", value)} />
+        <Field label="Conteúdo" value={item.body} multiline onChange={(value) => updateItem(setContent, "news", index, "body", value)} />
+        <Field label="Descrição acessível da imagem" value={item.imageAlt} onChange={(value) => updateItem(setContent, "news", index, "imageAlt", value)} />
+        <UploadField label="Imagem de destaque" value={item.image} busy={uploading === `news-${index}`} accept="image/*" onUpload={async (file) => { const url = await upload(file, `news-${index}`); if (url) updateItem(setContent, "news", index, "image", url); }} onChange={(value) => updateItem(setContent, "news", index, "image", value)} />
+        <label className="toggle-field"><input type="checkbox" checked={item.published} onChange={(event) => updateItem(setContent, "news", index, "published", event.target.checked)} /><span />{item.published ? "Publicada no website" : "Guardar como rascunho"}</label>
+      </EditorCard>)}
+    </Collection>
+  </div>;
 }
 
 function GalleryEditor({ items, setContent, upload, uploading }: EditorProps<GalleryItem>) {
-  const add = () => setContent((current) => current && ({ ...current, gallery: [...current.gallery, { id: uniqueId("imagem"), src: "/media/community-rock.jpg", alt: "Imagem de Tchitundo-Hulo", label: "Nova imagem", orientation: "standard" }] }));
+  const add = () => setContent((current) => current && ({ ...current, gallery: [...current.gallery, { id: uniqueId("imagem"), src: "/media/community-rock.jpg", alt: "Imagem de Tchitundu-Hulu", label: "Nova imagem", orientation: "standard" }] }));
   return <Collection title="Galeria" description="Organize as fotografias, legendas e formatos apresentados no arquivo visual." onAdd={add} addLabel="Adicionar imagem">
     <div className="gallery-admin-grid">{items.map((item, index) => <article className="gallery-admin-card" key={item.id}>
       <div className="gallery-admin-preview"><ManagedImage src={item.src} alt="" fill sizes="(max-width: 1050px) calc(100vw - 260px), 42vw" /><span>{String(index + 1).padStart(2, "0")}</span><div className="gallery-card-actions"><button disabled={index === 0} onClick={() => moveItem(setContent, "gallery", index, -1)} aria-label="Mover imagem para cima">↑</button><button disabled={index === items.length - 1} onClick={() => moveItem(setContent, "gallery", index, 1)} aria-label="Mover imagem para baixo">↓</button><button onClick={() => removeItem(setContent, "gallery", index)} aria-label="Eliminar imagem">×</button></div></div>
@@ -713,7 +775,7 @@ function formatDuration(seconds: number) {
 
 function sectionLabel(id?: string) {
   if (!id) return "Sem dados";
-  return ({ inicio: "Hero inicial", campanha: "A campanha", territorio: "O lugar", impacto: "Impacto", galeria: "Galeria", filme: "Vídeos", cultura: "Agenda cultural", documentos: "Documentos", arquivo: "Arquivo" } as Record<string, string>)[id] ?? id;
+  return ({ inicio: "Hero inicial", campanha: "A campanha", territorio: "O lugar", impacto: "Impacto", noticias: "Notícias", galeria: "Galeria", filme: "Vídeos", cultura: "Agenda cultural", documentos: "Documentos", arquivo: "Arquivo" } as Record<string, string>)[id] ?? id;
 }
 
 function deviceLabel(device: "desktop" | "tablet" | "mobile") {
@@ -861,7 +923,8 @@ function Field({ label, value, multiline, onChange }: { label: string; value: st
 function UploadField({ label, value, accept, busy, onChange, onUpload }: { label: string; value: string; accept: string; busy: boolean; onChange: (value: string) => void; onUpload: (file: File) => void }) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const canPreview = Boolean(value) && ((value.startsWith("/") && !value.startsWith("//") && !value.includes("\\")) || value.startsWith("https://"));
-  const inlinePreview = accept.includes("image/") || accept.includes("video/");
+  const externalVideoPage = accept.includes("video/") && /^https:\/\/(?:www\.)?(?:youtube\.com|youtu\.be)\//i.test(value);
+  const inlinePreview = accept.includes("image/") || (accept.includes("video/") && !externalVideoPage);
   return <>
     <div className="upload-field"><Field label={label} value={value} onChange={onChange} /><div className="upload-actions">
       {canPreview && (inlinePreview ? <button className="preview-button" type="button" onClick={() => setPreviewOpen(true)}>Visualizar</button> : <a className="preview-button" href={value} target="_blank" rel="noreferrer">Visualizar</a>)}
@@ -878,7 +941,7 @@ function ManagedImage({ src, alt, unoptimized, ...props }: ImageProps) {
   return <Image src={resolvedSrc} alt={alt} unoptimized={unoptimized ?? bypassOptimizer} {...props} />;
 }
 
-type ContentCollectionKey = "portals" | "gallery" | "agenda" | "documents" | "archive";
+type ContentCollectionKey = "portals" | "gallery" | "news" | "agenda" | "documents" | "archive";
 
 function updateItem<K extends ContentCollectionKey>(setContent: React.Dispatch<React.SetStateAction<SiteContent | null>>, collection: K, index: number, field: string, value: unknown) {
   setContent((current) => {
@@ -906,4 +969,8 @@ function moveItem<K extends ContentCollectionKey>(setContent: React.Dispatch<Rea
 
 function uniqueId(prefix: string) {
   return `${prefix}-${Date.now().toString(36)}`;
+}
+
+function slugify(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }

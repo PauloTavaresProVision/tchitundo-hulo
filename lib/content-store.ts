@@ -1,6 +1,6 @@
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { siteContent, type EditorialSettings, type SiteContent } from "@/content/site-content";
+import { siteContent, type EditorialSettings, type LocalizedSiteContent, type SeoSettings, type SiteContent } from "@/content/site-content";
 
 type ContentVersion = {
   id: string;
@@ -96,11 +96,43 @@ async function readContentFile(target: string, fallback: SiteContent) {
     const value = JSON.parse(await readFile(target, "utf8")) as unknown;
     const normalized = normalizeSiteContent(value);
     if (!normalized) throw new Error("Invalid content structure");
-    return migrateLegacyVideo(normalized);
+    return migrateSiteContent(migrateLegacyVideo(normalized));
   } catch (error) {
     if (isMissingFile(error)) return fallback;
     throw error;
   }
+}
+
+function migrateSiteContent(content: SiteContent): SiteContent {
+  const portuguese = migrateLocalizedMedia(content);
+  const english = migrateLocalizedMedia(content.translations.en);
+  const serialized = JSON.stringify({
+    ...portuguese,
+    settings: content.settings,
+    translations: { en: english },
+  })
+    .replaceAll("Tchitundo-Hulo", "Tchitundu-Hulu")
+    .replaceAll("Tchitundo-Hulu", "Tchitundu-Hulu")
+    .replaceAll("Tchitundu-Hulo", "Tchitundu-Hulu");
+  return JSON.parse(serialized) as SiteContent;
+}
+
+function migrateLocalizedMedia<T extends LocalizedSiteContent>(content: T): T {
+  return {
+    ...content,
+    seo: {
+      ...content.seo,
+      ogImage: content.seo.ogImage === "/og.png"
+        ? "/media/hero-sunset-portal.png"
+        : content.seo.ogImage,
+    },
+    video: {
+      ...content.video,
+      src: content.video.src === "/media/documentario-tchitundo-hulo.mp4"
+        ? "https://www.youtube.com/watch?v=RXZhH_Ide44"
+        : content.video.src,
+    },
+  };
 }
 
 function migrateLegacyVideo(content: SiteContent): SiteContent {
@@ -129,12 +161,14 @@ async function readHistory(): Promise<ContentVersion[]> {
 
 function summarizeContentChanges(version: SiteContent, published: SiteContent): ContentVersionChange[] {
   const areas: Array<{ area: string; before: unknown; after: unknown }> = [
+    { area: "Visibilidade das secções", before: version.settings, after: published.settings },
     { area: "Página inicial e hero", before: version.editorial.hero, after: published.editorial.hero },
     { area: "Entradas da página inicial", before: version.portals, after: published.portals },
     { area: "A campanha", before: version.editorial.campaign, after: published.editorial.campaign },
     { area: "O lugar", before: version.editorial.territory, after: published.editorial.territory },
     { area: "Apresentação da galeria", before: version.editorial.gallery, after: published.editorial.gallery },
     { area: "Galeria", before: version.gallery, after: published.gallery },
+    { area: "Notícias", before: version.news, after: published.news },
     { area: "Vídeo", before: version.video, after: published.video },
     { area: "Cultura", before: version.editorial.culture, after: published.editorial.culture },
     { area: "Agenda cultural", before: version.agenda, after: published.agenda },
@@ -144,6 +178,7 @@ function summarizeContentChanges(version: SiteContent, published: SiteContent): 
     { area: "Fecho da página", before: version.editorial.closing, after: published.editorial.closing },
     { area: "Informação legal", before: version.legal, after: published.legal },
     { area: "SEO", before: version.seo, after: published.seo },
+    { area: "Conteúdos em inglês", before: version.translations.en, after: published.translations.en },
   ];
 
   return areas.flatMap(({ area, before, after }) => {
@@ -202,7 +237,7 @@ function changeFieldLabel(field: string) {
     order: "ordem dos conteúdos",
     content: "conteúdo",
     backgroundImage: "fotografia de fundo",
-    titleImage: "lettering Tchitundo-Hulo",
+    titleImage: "lettering Tchitundu-Hulu",
     image: "imagem",
     src: "ficheiro",
     poster: "imagem de capa",
@@ -221,6 +256,14 @@ function changeFieldLabel(field: string) {
     href: "ligação",
     enabled: "visibilidade",
     available: "disponibilidade",
+    agendaEnabled: "visibilidade da agenda",
+    newsEnabled: "visibilidade das notícias",
+    languageSwitcherEnabled: "seletor de idioma",
+    slug: "endereço da notícia",
+    category: "categoria",
+    summary: "resumo",
+    publishedAt: "data de publicação",
+    published: "estado de publicação",
     orientation: "formato",
     role: "perfil",
     year: "ano",
@@ -237,23 +280,50 @@ function changeFieldLabel(field: string) {
 
 function normalizeSiteContent(value: unknown): SiteContent | null {
   if (!isRecord(value)) return null;
-  if (!Array.isArray(value.portals) || !Array.isArray(value.gallery)) return null;
-  if (!Array.isArray(value.agenda) || !Array.isArray(value.documents) || !Array.isArray(value.archive)) return null;
-  if ([value.portals, value.gallery, value.agenda, value.documents, value.archive].some((collection) => collection.length > 500)) return null;
-  if ([value.portals, value.gallery, value.agenda, value.documents, value.archive].some((collection) => !uniqueIds(collection))) return null;
+  const defaults = defaultSiteContent();
+  const settings = normalizeSiteSettings(value.settings, defaults.settings);
+  const localized = normalizeLocalizedSiteContent(value, defaults);
+  const translations = isRecord(value.translations) ? value.translations : {};
+  const english = normalizeLocalizedSiteContent(translations.en, defaults.translations.en);
+  if (!settings || !localized || !english) return null;
+  return {
+    ...localized,
+    settings,
+    translations: { en: english },
+  };
+}
 
-  const collectionsAreValid = value.portals.every((item) => hasStrings(item, ["id", "label", "href", "mark"]) && isRecord(item) && /^#[a-z0-9_-]+$/i.test(String(item.href)) && ["agenda", "campaign", "place"].includes(String(item.mark)))
-    && value.gallery.every((item) => hasStrings(item, ["id", "src", "alt", "label", "orientation"]) && isRecord(item) && safePublicUrl(item.src) && ["wide", "tall", "standard"].includes(String(item.orientation)))
-    && value.agenda.every((item) => hasStrings(item, ["id", "number", "type", "title", "detail", "status", "image"]) && isRecord(item) && safePublicUrl(item.image))
-    && value.documents.every((item) => isRecord(item) && hasStrings(item, ["id", "title", "detail"]) && typeof item.available === "boolean" && (item.href === undefined || (typeof item.href === "string" && safePublicUrl(item.href))))
-    && value.archive.every((item) => hasStrings(item, ["id", "year", "title", "tag"]));
+function normalizeLocalizedSiteContent(value: unknown, fallback: LocalizedSiteContent): LocalizedSiteContent | null {
+  if (!isRecord(value)) value = {};
+  const candidate = value as Record<string, unknown>;
+  const news = candidate.news === undefined ? fallback.news : candidate.news;
+  const portals = candidate.portals ?? fallback.portals;
+  const gallery = candidate.gallery ?? fallback.gallery;
+  const agenda = candidate.agenda ?? fallback.agenda;
+  const documents = candidate.documents ?? fallback.documents;
+  const archive = candidate.archive ?? fallback.archive;
+  if (!Array.isArray(portals) || !Array.isArray(gallery)) return null;
+  if (!Array.isArray(news) || !Array.isArray(agenda) || !Array.isArray(documents) || !Array.isArray(archive)) return null;
+  if ([portals, gallery, news, agenda, documents, archive].some((collection) => collection.length > 500)) return null;
+  if ([portals, gallery, news, agenda, documents, archive].some((collection) => !uniqueIds(collection))) return null;
+  if (new Set(news.map((item) => isRecord(item) && typeof item.slug === "string" ? item.slug : "")).size !== news.length) return null;
+
+  const collectionsAreValid = portals.every((item) => hasStrings(item, ["id", "label", "href", "mark"]) && isRecord(item) && /^#[a-z0-9_-]+$/i.test(String(item.href)) && ["agenda", "campaign", "place"].includes(String(item.mark)))
+    && gallery.every((item) => hasStrings(item, ["id", "src", "alt", "label", "orientation"]) && isRecord(item) && safePublicUrl(item.src) && ["wide", "tall", "standard"].includes(String(item.orientation)))
+    && news.every((item) => isRecord(item)
+      && hasStrings(item, ["id", "slug", "category", "title", "summary", "body", "publishedAt", "image", "imageAlt"])
+      && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(String(item.slug))
+      && safePublicUrl(item.image)
+      && typeof item.published === "boolean")
+    && agenda.every((item) => hasStrings(item, ["id", "number", "type", "title", "detail", "status", "image"]) && isRecord(item) && safePublicUrl(item.image))
+    && documents.every((item) => isRecord(item) && hasStrings(item, ["id", "title", "detail"]) && typeof item.available === "boolean" && (item.href === undefined || (typeof item.href === "string" && safePublicUrl(item.href))))
+    && archive.every((item) => hasStrings(item, ["id", "year", "title", "tag"]));
   if (!collectionsAreValid) return null;
 
-  const defaults = defaultSiteContent();
-  const seo = hasValidSeo(value.seo) ? value.seo : defaults.seo;
-  const editorial = normalizeEditorial(value.editorial, defaults.editorial);
-  const video = normalizeStringObject(value.video, defaults.video, ["poster"], ["src"]);
-  const legal = normalizeStringObject(value.legal, defaults.legal, ["cookiesUrl"], ["privacyUrl", "termsUrl"]);
+  const seo = hasValidSeo(candidate.seo) ? candidate.seo : fallback.seo;
+  const editorial = normalizeEditorial(candidate.editorial, fallback.editorial);
+  const video = normalizeStringObject(candidate.video, fallback.video, ["poster"], ["src"]);
+  const legal = normalizeStringObject(candidate.legal, fallback.legal, ["cookiesUrl"], ["privacyUrl", "termsUrl"]);
   if (!editorial || !video || !legal || typeof video.enabled !== "boolean") return null;
 
   return {
@@ -261,12 +331,22 @@ function normalizeSiteContent(value: unknown): SiteContent | null {
     editorial,
     video: video as SiteContent["video"],
     legal: legal as SiteContent["legal"],
-    portals: value.portals as SiteContent["portals"],
-    gallery: value.gallery as SiteContent["gallery"],
-    agenda: value.agenda as SiteContent["agenda"],
-    documents: value.documents as SiteContent["documents"],
-    archive: value.archive as SiteContent["archive"],
+    portals: portals as SiteContent["portals"],
+    gallery: gallery as SiteContent["gallery"],
+    news: news as SiteContent["news"],
+    agenda: agenda as SiteContent["agenda"],
+    documents: documents as SiteContent["documents"],
+    archive: archive as SiteContent["archive"],
   };
+}
+
+function normalizeSiteSettings(value: unknown, fallback: SiteContent["settings"]): SiteContent["settings"] | null {
+  const candidate = isRecord(value) ? value : fallback;
+  const agendaEnabled = candidate.agendaEnabled ?? fallback.agendaEnabled;
+  const newsEnabled = candidate.newsEnabled ?? fallback.newsEnabled;
+  const languageSwitcherEnabled = candidate.languageSwitcherEnabled ?? fallback.languageSwitcherEnabled;
+  if (typeof agendaEnabled !== "boolean" || typeof newsEnabled !== "boolean" || typeof languageSwitcherEnabled !== "boolean") return null;
+  return { agendaEnabled, newsEnabled, languageSwitcherEnabled };
 }
 
 function normalizeEditorial(value: unknown, fallback: EditorialSettings): EditorialSettings | null {
@@ -278,6 +358,7 @@ function normalizeEditorial(value: unknown, fallback: EditorialSettings): Editor
     territory: ["image"],
     impact: ["backgroundImage"],
     gallery: [],
+    news: [],
     culture: [],
     documents: [],
     archive: [],
@@ -306,7 +387,7 @@ function normalizeStringObject<T extends Record<string, unknown>>(value: unknown
   return result as T;
 }
 
-function hasValidSeo(value: unknown): value is SiteContent["seo"] {
+function hasValidSeo(value: unknown): value is SeoSettings {
   return isRecord(value)
     && hasStrings(value, ["title", "description", "keywords", "canonicalUrl", "ogImage"])
     && String(value.title).length <= 120

@@ -1,4 +1,4 @@
-.admin-shell, .admin-login-page, .admin-loading { --admin-ink:#020917; --admin-panel:#07162a; --admin-line:rgba(255,255,255,.12); --admin-gold:#d6b16d; --admin-blue:#0033aa; min-height:100svh; font-family:Arial,Roboto,sans-serif; color:#f7f5ef; background:#f0f1f3; }
+.admin-shell, .admin-login-page, .admin-loading { --admin-ink:#020917; --admin-panel:#07162a; --admin-line:rgba(255,255,255,.12); --admin-gold:#d6b16d; --admin-blue:#0033aa; min-height:100svh; font-family:"Benton Sans",Arial,sans-serif; color:#f7f5ef; background:#f0f1f3; }
 .admin-shell * { box-sizing:border-box; }
 .admin-sidebar { position:fixed; inset:0 auto 0 0; z-index:20; width:260px; display:flex; flex-direction:column; padding:28px 22px 22px; background:var(--admin-ink); border-right:1px solid rgba(255,255,255,.08); }
 .admin-brand { display:block; padding:0 10px 34px; border-bottom:1px solid var(--admin-line); }
@@ -22,6 +22,10 @@
 .admin-topbar h1 { margin:0; color:#07162a; font-size:25px; }
 .admin-actions { display:flex; align-items:center; gap:12px; }
 .admin-actions a,.admin-actions button,.secondary { min-height:42px; display:inline-flex; align-items:center; justify-content:center; padding:0 17px; border:1px solid #d6dae1; color:#263146; background:#fff; font-size:11px; font-weight:700; cursor:pointer; }
+.admin-locale-control { min-height:42px; display:flex; align-items:center; padding:4px; border:1px solid #d6dae1; background:#f5f6f8; }
+.admin-locale-control>span { padding:0 10px 0 8px; color:#77808e; font-size:8px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
+.admin-actions .admin-locale-control button { min-width:38px; min-height:32px; padding:0 9px; border:0; background:transparent; color:#5f6877; font-size:9px; }
+.admin-actions .admin-locale-control button.active { background:#0033aa; color:#fff; }
 .admin-actions .primary,.admin-login-panel .primary { border-color:var(--admin-blue); background:var(--admin-blue); color:#fff; }
 .admin-actions button:disabled { opacity:.55; cursor:wait; }
 .admin-workspace { padding:clamp(30px,4vw,64px); }
@@ -62,7 +66,7 @@
 .editor-card-fields { display:grid; gap:18px; padding:24px; }
 .field-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
 .admin-field { display:grid; gap:8px; color:#606a79; font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
-.admin-field input,.admin-field textarea,.admin-field select { width:100%; padding:12px 13px; border:1px solid #d4d9e0; border-radius:0; outline:none; background:#fbfbfc; color:#172033; font:400 13px/1.4 Arial,Roboto,sans-serif; text-transform:none; letter-spacing:normal; }
+.admin-field input,.admin-field textarea,.admin-field select { width:100%; padding:12px 13px; border:1px solid #d4d9e0; border-radius:0; outline:none; background:#fbfbfc; color:#172033; font:400 13px/1.4 Arial,sans-serif; text-transform:none; letter-spacing:normal; }
 .admin-field input:focus,.admin-field textarea:focus,.admin-field select:focus { border-color:var(--admin-blue); box-shadow:0 0 0 2px rgba(0,51,170,.08); }
 .upload-field { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; align-items:end; }
 .upload-actions { display:grid; gap:7px; }
@@ -92,7 +96,7 @@
 .admin-login-panel h2 { margin:12px 0; color:#07162a; font-size:32px; }
 .admin-login-panel form>p:not(.admin-kicker) { margin:0 0 32px; color:#727b89; font-size:13px; line-height:1.6; }
 .admin-login-panel label { display:grid; gap:8px; margin-bottom:18px; color:#555f6e; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
-.admin-login-panel input { padding:14px; border:1px solid #d2d7df; font:14px Arial,Roboto,sans-serif; }
+.admin-login-panel input { padding:14px; border:1px solid #d2d7df; font:14px Arial,sans-serif; }
 .admin-login-panel .primary { width:100%; min-height:48px; border:0; font-weight:700; cursor:pointer; }
 .admin-login-panel small { display:block; margin-top:18px; color:#8b929d; text-align:center; }
 .admin-login-panel .admin-notice { margin:0 0 22px; }
@@ -307,3 +311,18 @@
 
 @media(max-width:1180px){.website-editor-grid{grid-template-columns:1fr}.media-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.history-list article{grid-template-columns:minmax(210px,.65fr) minmax(360px,1.35fr)}.history-restore-button{grid-column:1/-1;min-height:66px;grid-template-columns:32px auto 1fr;grid-template-rows:auto;justify-content:start;align-items:center}.history-restore-button>span{grid-row:auto}.history-restore-button small{justify-self:end}}
 @media(max-width:760px){.admin-topbar{align-items:flex-start}.admin-actions{width:100%;justify-content:flex-start}.admin-actions button{flex:1}.editorial-panel{padding:20px}.upload-actions{grid-template-columns:1fr 1fr}.media-grid{grid-template-columns:1fr}.history-list article{grid-template-columns:1fr}.history-version{border-right:0;border-bottom:1px solid #e1e4e8}.history-diff{padding:20px}.history-diff>div{align-items:flex-start;flex-direction:column;gap:5px}.history-diff li{min-width:100%}.history-restore-button{grid-column:auto;min-height:70px;grid-template-columns:32px 1fr;grid-template-rows:auto auto}.history-restore-button>span{grid-row:1/3}.history-restore-button small{justify-self:start}.video-state{align-items:flex-start;flex-direction:column}.admin-media-modal{padding:14px}.admin-media-modal footer{align-items:flex-start;flex-direction:column}.admin-media-modal footer code{width:100%}}
+
+.collection-stack { display:grid; gap:24px; }
+.language-visibility { margin-bottom:22px; }
+.section-visibility { display:flex; align-items:center; justify-content:space-between; gap:32px; padding:24px 28px; border:1px solid #cfd5dd; background:#fff; }
+.section-visibility h3 { margin:4px 0 6px; color:#07162a; font-size:24px; font-weight:400; }
+.section-visibility p:not(.admin-kicker) { margin:0; color:#707a88; font-size:11px; line-height:1.55; }
+.section-visibility .toggle-field { flex:0 0 auto; min-width:180px; justify-content:flex-end; padding:14px 16px; border:1px solid #dfe3e8; background:#f7f8fa; }
+.news-editor .editor-card-fields textarea { min-height:120px; }
+.news-editor .editor-card-fields .admin-field:nth-of-type(5) textarea { min-height:260px; }
+
+@media(max-width:760px){
+  .section-visibility { align-items:flex-start; flex-direction:column; padding:20px; }
+  .section-visibility .toggle-field { width:100%; min-width:0; justify-content:flex-start; }
+  .admin-actions .admin-locale-control button { flex:0 0 auto; }
+}

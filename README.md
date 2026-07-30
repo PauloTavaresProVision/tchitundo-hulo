@@ -1,4 +1,4 @@
-# Tchitundo-Hulo · Standard Bank Angola
+# Tchitundu-Hulu · Standard Bank Angola
 
 Plataforma editorial institucional com website público, backoffice protegido por MFA, estatísticas próprias e execução em Docker na porta `7788`.
 
@@ -19,13 +19,15 @@ Copie `.env.example` para `.env`, substitua as credenciais e gere chaves aleató
 docker compose up -d --build
 ```
 
-O website fica em `/` e o backoffice em `/admin`. Os dados persistentes são guardados no volume `tchitundo_content`.
+O website em português fica em `/`, a versão inglesa em `/en` e o backoffice em `/admin`. Os dados persistentes são guardados no volume `tchitundo_content`.
 
 Configuração de referência para o servidor: 4 vCPU, 8 GB de RAM e 100 GB de armazenamento SSD persistente. O vídeo pode ser carregado mais tarde no módulo próprio do backoffice.
 
 ## Gestão editorial
 
 - Edição dos textos, imagens, ligações e títulos de todas as secções do website.
+- Conteúdos independentes em português e inglês, com seletor público PT/EN configurável.
+- Notícias em PT/EN, opção para mostrar ou ocultar a Agenda Cultural e download das fotografias da galeria.
 - Rascunho separado do conteúdo público, pré-visualização autenticada e publicação explícita.
 - Histórico das 30 versões anteriores, recuperação como rascunho e importação/exportação JSON.
 - Agenda, galeria, documentos e campanhas com criação, edição, ordenação e remoção.
