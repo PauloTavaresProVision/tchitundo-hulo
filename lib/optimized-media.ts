@@ -13,6 +13,7 @@ const optimizedStaticMedia = new Set([
   "hero-aerial",
   "hero-sunset-portal",
   "rock-silhouette-vertical",
+  "tchitundu-hulu-lettering-transparent",
   "tchitundo-hulo-lettering-transparent",
 ]);
 

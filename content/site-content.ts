@@ -183,7 +183,7 @@ export const siteContent: SiteContent = {
       lead: "Marcas na pedra. Memória viva.",
       ctaLabel: "Explorar a história",
       backgroundImage: "/media/hero-sunset-portal.png",
-      titleImage: "/media/tchitundo-hulo-lettering-transparent.png",
+      titleImage: "/media/tchitundu-hulu-lettering-transparent.png",
     },
     campaign: {
       eyebrow: "A campanha",
@@ -333,7 +333,7 @@ function createEnglishSiteContent(): LocalizedSiteContent {
         lead: "Marks in stone. Living memory.",
         ctaLabel: "Explore the story",
         backgroundImage: "/media/hero-sunset-portal.png",
-        titleImage: "/media/tchitundo-hulo-lettering-transparent.png",
+        titleImage: "/media/tchitundu-hulu-lettering-transparent.png",
       },
       campaign: {
         eyebrow: "The campaign",
