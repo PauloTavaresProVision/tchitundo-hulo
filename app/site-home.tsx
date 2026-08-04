@@ -14,7 +14,6 @@ export default function SiteHome({ initialContent, locale, preview = false }: { 
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [filmOpen, setFilmOpen] = useState(false);
-  const [heroReady, setHeroReady] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const { gallery, news, agenda, documents, archive, portals, editorial, video, legal, settings } = content;
   const visiblePortals = portals.filter((portal) => settings.agendaEnabled || portal.href !== "#cultura");
@@ -55,21 +54,6 @@ export default function SiteHome({ initialContent, locale, preview = false }: { 
     };
   }, [selectedIndex, filmOpen, menuOpen, gallery.length]);
 
-  useEffect(() => {
-    if (!heroReady) return;
-    const thumbnailUrls = [...new Set(gallery.map((image) => galleryThumbnailUrl(image.src)))];
-    const preloaders: HTMLImageElement[] = [];
-    const timer = window.setTimeout(() => {
-      thumbnailUrls.forEach((url) => {
-        const preload = new window.Image();
-        preload.decoding = "async";
-        preload.src = url;
-        preloaders.push(preload);
-      });
-    }, 150);
-    return () => window.clearTimeout(timer);
-  }, [gallery, heroReady]);
-
   const closeMenu = () => setMenuOpen(false);
   const moveGallery = (direction: -1 | 1) => {
     if (!gallery.length) return;
@@ -83,12 +67,12 @@ export default function SiteHome({ initialContent, locale, preview = false }: { 
       <div className="scroll-progress" style={{ transform: `scaleX(${scrollProgress})` }} aria-hidden="true" />
 
       <section className="hero" id="inicio" aria-labelledby="hero-title">
-        <div className="hero-photo" aria-hidden="true"><ManagedImage src={editorial.hero.backgroundImage} alt="" fill sizes="100vw" priority onLoad={() => setHeroReady(true)} /></div>
+        <div className="hero-photo" aria-hidden="true"><ManagedImage src={editorial.hero.backgroundImage} alt="" fill sizes="100vw" priority /></div>
         <div className="hero-grain" aria-hidden="true" />
         <header className="site-header shell">
           <a className="brand" href="#inicio" aria-label={`Standard Bank, ${ui.home}`}><ManagedImage src="/brand/standard-bank-logo-white-official.png" alt="Standard Bank" width={1717} height={456} sizes="(max-width: 760px) 154px, 190px" priority /></a>
           <nav className="desktop-nav" aria-label={ui.primaryNavigation}>
-            {settings.agendaEnabled && <a href="#cultura">{ui.nav.agenda}</a>}<a href="#campanha">{ui.nav.campaign}</a><a href="#territorio">{ui.nav.place}</a><a href="#filme">{ui.nav.documentary}</a><a href="#galeria">{ui.nav.gallery}</a>{settings.preserveEnabled && <a href="#impacto">{ui.nav.preserve}</a>}{settings.newsEnabled && <a href="#noticias">{ui.nav.news}</a>}
+            {settings.agendaEnabled && <a href="#cultura">{ui.nav.agenda}</a>}<a href="#campanha">{ui.nav.campaign}</a><a href="#territorio">{ui.nav.place}</a><a href="#galeria">{ui.nav.gallery}</a>{settings.preserveEnabled && <a href="#impacto">{ui.nav.preserve}</a>}{settings.newsEnabled && <a href="#noticias">{ui.nav.news}</a>}
           </nav>
           <div className="header-controls">
             {settings.languageSwitcherEnabled && <nav className="language-switcher" aria-label={ui.languageSelection}><a className={locale === "pt" ? "active" : ""} href="/">PT</a><span>/</span><a className={locale === "en" ? "active" : ""} href="/en">EN</a></nav>}
@@ -198,7 +182,7 @@ export default function SiteHome({ initialContent, locale, preview = false }: { 
       </section>
 
       <footer className="site-footer">
-        <div className="shell footer-top"><ManagedImage src="/brand/standard-bank-logo-white-official.png" alt="Standard Bank" width={1717} height={456} sizes="245px" /><nav aria-label={ui.footerNavigation}><a href="#campanha">{ui.nav.campaign}</a><a href="#territorio">Tchitundu-Hulu</a><a href="#filme">{ui.nav.documentary}</a><a href="#galeria">{ui.nav.gallery}</a>{settings.newsEnabled && <a href="#noticias">{ui.nav.news}</a>}{settings.agendaEnabled && <a href="#cultura">{ui.nav.culture}</a>}<a href="#documentos">{ui.nav.documents}</a></nav></div>
+        <div className="shell footer-top"><ManagedImage src="/brand/standard-bank-shield-official.png" alt="Standard Bank" width={405} height={456} sizes="72px" /><nav aria-label={ui.footerNavigation}><a href="#campanha">{ui.nav.campaign}</a><a href="#territorio">Tchitundu-Hulu</a><a href="#galeria">{ui.nav.gallery}</a>{settings.newsEnabled && <a href="#noticias">{ui.nav.news}</a>}<a href="#documentos">{ui.nav.documents}</a></nav></div>
         <div className="footer-corporate shell"><CorporateNotice value={legal.corporateNotice} /></div>
         <div className="shell footer-bottom"><span>{legal.copyright}</span><span className="footer-legal">{legal.privacyUrl && <a href={legal.privacyUrl}>{legal.privacyLabel}</a>}{legal.termsUrl && <a href={legal.termsUrl}>{legal.termsLabel}</a>}<a href={legal.cookiesUrl} target="_blank" rel="noreferrer">{ui.cookiePolicy}</a><button type="button" onClick={openCookieSettings}>{legal.cookiesLabel}</button></span><span>{legal.strapline}</span></div>
       </footer>

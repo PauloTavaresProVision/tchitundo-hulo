@@ -131,7 +131,7 @@ test("keeps the campaign CMS-ready and Docker-ready on port 7788", async () => {
   assert.match(siteHome, /loading="lazy"/);
   assert.match(siteHome, /optimizedMediaUrl/);
   assert.match(siteHome, /galleryThumbnailUrl/);
-  assert.match(siteHome, /preload\.src = url/);
+  assert.doesNotMatch(siteHome, /preload\.src = url/);
   assert.doesNotMatch(siteHome, /<img\b/);
   assert.doesNotMatch(admin, /<img\b/);
   assert.doesNotMatch(siteHome, /className="(?:hero-photo|manifesto-image|film-photo|closing-photo)" style=\{\{ backgroundImage/);
