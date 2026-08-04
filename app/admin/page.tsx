@@ -369,6 +369,7 @@ function WebsiteEditor({ content, setContent, upload, uploading }: { content: Si
   return <div className="admin-collection website-editor">
     <header><div><h2>Conteúdo do website</h2><p>Edite os textos, imagens e ligações institucionais sem alterar o design.</p></div></header>
     <section className="section-visibility language-visibility"><div><p className="admin-kicker">Website bilingue</p><h3>Português e inglês</h3><p>Os botões PT e EN no topo do backoffice permitem editar cada versão. Este controlo apresenta ou oculta o seletor no website público.</p></div><label className="toggle-field"><input type="checkbox" checked={content.settings.languageSwitcherEnabled} onChange={(event) => setContent((current) => current ? ({ ...current, settings: { ...current.settings, languageSwitcherEnabled: event.target.checked } }) : current)} /><span />{content.settings.languageSwitcherEnabled ? "Seletor PT / EN visível" : "Seletor de idioma oculto"}</label></section>
+    <section className="section-visibility preserve-visibility"><div><p className="admin-kicker">Secção preparada</p><h3>Preservar</h3><p>O conteúdo e a imagem ficam guardados no backoffice. Active este controlo apenas quando a secção estiver pronta para publicação.</p></div><label className="toggle-field"><input type="checkbox" checked={content.settings.preserveEnabled} onChange={(event) => setContent((current) => current ? ({ ...current, settings: { ...current.settings, preserveEnabled: event.target.checked } }) : current)} /><span />{content.settings.preserveEnabled ? "Preservar visível no website" : "Preservar oculto no website"}</label></section>
     <div className="website-editor-grid">
       <EditorialPanel number="01" title="Hero inicial">
         <Field label="Linha institucional" value={content.editorial.hero.eyebrow} onChange={(value) => updateSection("hero", "eyebrow", value)} />
@@ -937,7 +938,7 @@ function UploadField({ label, value, accept, busy, onChange, onUpload }: { label
 function ManagedImage({ src, alt, unoptimized, ...props }: ImageProps) {
   if (typeof src === "string" && !src.trim()) return null;
   const resolvedSrc = typeof src === "string" ? optimizedMediaUrl(src) : src;
-  const bypassOptimizer = typeof resolvedSrc === "string" && (/^(?:https?:|data:|blob:)/i.test(resolvedSrc) || resolvedSrc.startsWith("/api/"));
+  const bypassOptimizer = typeof resolvedSrc === "string" && (/^(?:https?:|data:|blob:)/i.test(resolvedSrc) || resolvedSrc.startsWith("/"));
   return <Image src={resolvedSrc} alt={alt} unoptimized={unoptimized ?? bypassOptimizer} {...props} />;
 }
 

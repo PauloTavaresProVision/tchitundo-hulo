@@ -116,6 +116,7 @@ test("keeps the campaign CMS-ready and Docker-ready on port 7788", async () => {
   assert.match(siteHome, /publishedNews\.map/);
   assert.match(siteHome, /settings\.agendaEnabled/);
   assert.match(siteHome, /settings\.languageSwitcherEnabled/);
+  assert.match(siteHome, /settings\.preserveEnabled/);
   assert.match(siteHome, /publicNewsPath\(locale/);
   assert.match(siteHome, /gallery-download/);
   assert.match(siteHome, /youtubeEmbedUrl/);
@@ -144,6 +145,7 @@ test("keeps the campaign CMS-ready and Docker-ready on port 7788", async () => {
   assert.match(content, /export const siteContent/);
   assert.match(content, /translations:/);
   assert.match(content, /languageSwitcherEnabled: true/);
+  assert.match(content, /preserveEnabled: false/);
   assert.match(content, /youtube\.com\/watch\?v=RXZhH_Ide44/);
   assert.match(content, /enabled: true/);
   assert.match(contentStore, /migrateLegacyVideo/);
@@ -250,6 +252,7 @@ test("protects the backoffice with MFA, users, managed content and uploads", asy
     assert.equal(content.settings.agendaEnabled, false);
     assert.equal(content.settings.newsEnabled, true);
     assert.equal(content.settings.languageSwitcherEnabled, true);
+    assert.equal(content.settings.preserveEnabled, false);
     assert.equal(content.translations.en.editorial.hero.lead, "Marks in stone. Living memory.");
     assert.ok(content.news.length >= 1);
     content.agenda[0].title = "Agenda actualizada no backoffice";

@@ -88,7 +88,7 @@ export default function SiteHome({ initialContent, locale, preview = false }: { 
         <header className="site-header shell">
           <a className="brand" href="#inicio" aria-label={`Standard Bank, ${ui.home}`}><ManagedImage src="/brand/standard-bank-logo-white-official.png" alt="Standard Bank" width={1717} height={456} sizes="(max-width: 760px) 154px, 190px" priority /></a>
           <nav className="desktop-nav" aria-label={ui.primaryNavigation}>
-            {settings.agendaEnabled && <a href="#cultura">{ui.nav.agenda}</a>}<a href="#campanha">{ui.nav.campaign}</a><a href="#territorio">{ui.nav.place}</a><a href="#galeria">{ui.nav.gallery}</a><a href="#impacto">{ui.nav.preserve}</a>{settings.newsEnabled && <a href="#noticias">{ui.nav.news}</a>}
+            {settings.agendaEnabled && <a href="#cultura">{ui.nav.agenda}</a>}<a href="#campanha">{ui.nav.campaign}</a><a href="#territorio">{ui.nav.place}</a><a href="#filme">{ui.nav.documentary}</a><a href="#galeria">{ui.nav.gallery}</a>{settings.preserveEnabled && <a href="#impacto">{ui.nav.preserve}</a>}{settings.newsEnabled && <a href="#noticias">{ui.nav.news}</a>}
           </nav>
           <div className="header-controls">
             {settings.languageSwitcherEnabled && <nav className="language-switcher" aria-label={ui.languageSelection}><a className={locale === "pt" ? "active" : ""} href="/">PT</a><span>/</span><a className={locale === "en" ? "active" : ""} href="/en">EN</a></nav>}
@@ -144,10 +144,10 @@ export default function SiteHome({ initialContent, locale, preview = false }: { 
         </div>
       </section>
 
-      <section className="manifesto" id="impacto" aria-label={ui.preservationManifesto}>
+      {settings.preserveEnabled ? <section className="manifesto" id="impacto" aria-label={ui.preservationManifesto}>
         <div className="manifesto-image" aria-hidden="true"><ManagedImage src={editorial.impact.backgroundImage} alt="" fill sizes="100vw" /></div>
         <div className="shell manifesto-content"><p className="eyebrow">{editorial.impact.eyebrow}</p><blockquote>“{editorial.impact.quote}”</blockquote><p>{editorial.impact.attribution}</p></div>
-      </section>
+      </section> : <section className="visual-break visual-break-rock" aria-hidden="true"><ManagedImage src={editorial.impact.backgroundImage} alt="" fill sizes="100vw" /></section>}
 
       {settings.newsEnabled && <section className="news-section" id="noticias" aria-labelledby="news-title">
         <div className="shell news-heading">
@@ -160,19 +160,21 @@ export default function SiteHome({ initialContent, locale, preview = false }: { 
         </article>)}</div> : <p className="news-empty shell">{ui.newsSoon}</p>}
       </section>}
 
-      <section className="gallery-section section-dark" id="galeria" aria-labelledby="gallery-title">
-        <div className="shell gallery-heading"><div><p className="eyebrow">{editorial.gallery.eyebrow}</p><h2 id="gallery-title"><Lines value={editorial.gallery.title} /></h2></div><p>{editorial.gallery.description}</p></div>
-        <div className="gallery-grid shell">
-          {gallery.map((image, index) => <button className={`gallery-item ${image.orientation}`} type="button" key={image.id} onClick={() => setSelectedIndex(index)} aria-label={`${ui.enlargeImage}: ${image.label}`}><ManagedImage src={galleryThumbnailUrl(image.src)} alt={image.alt} width={1200} height={900} sizes="(max-width: 440px) calc(100vw - 60px), (max-width: 760px) 50vw, 33vw" draggable={false} loading="lazy" unoptimized /><span><i>{String(index + 1).padStart(2, "0")}</i>{image.label}<b>＋</b></span></button>)}
-        </div>
-        <p className="gallery-notice shell">{editorial.gallery.notice}</p>
-      </section>
-
       <section className="film" id="filme" aria-labelledby="film-title">
         <div className="film-photo" aria-hidden="true"><ManagedImage src={video.poster} alt="" fill sizes="100vw" /></div>
         <div className="shell film-content"><p className="eyebrow">{video.eyebrow}</p><h2 id="film-title"><Lines value={video.title} /></h2><p>{video.description}</p><button className="play-button" type="button" onClick={() => setFilmOpen(true)}><span aria-hidden="true">▶</span> {video.buttonLabel}</button></div>
         <div className="film-meta"><span>{video.type}</span><span>{video.enabled && video.src ? ui.available : video.status}</span><span>{video.language}</span></div>
       </section>
+
+      <section className="gallery-section section-dark" id="galeria" aria-labelledby="gallery-title">
+        <div className="shell gallery-heading"><div><p className="eyebrow">{editorial.gallery.eyebrow}</p><h2 id="gallery-title"><Lines value={editorial.gallery.title} /></h2></div><p>{editorial.gallery.description}</p></div>
+        <div className="gallery-grid shell">
+          {gallery.map((image, index) => <button className={`gallery-item ${image.orientation}`} type="button" key={image.id} onClick={() => setSelectedIndex(index)} aria-label={`${ui.enlargeImage}: ${image.label}`}><ManagedImage src={galleryThumbnailUrl(image.src)} alt={image.alt} width={1200} height={900} sizes="(max-width: 440px) calc(100vw - 34px), (max-width: 760px) calc(50vw - 24px), 40vw" draggable={false} loading="lazy" unoptimized /><span><i>{String(index + 1).padStart(2, "0")}</i>{image.label}<b>＋</b></span></button>)}
+        </div>
+        <p className="gallery-notice shell">{editorial.gallery.notice}</p>
+      </section>
+
+      <section className="visual-break visual-break-woman" aria-hidden="true"><ManagedImage src="/media/design/community-woman-web.webp" alt="" fill sizes="100vw" /></section>
 
       {settings.agendaEnabled && <section className="culture" id="cultura" aria-labelledby="culture-title">
         <div className="shell culture-layout">
@@ -196,14 +198,14 @@ export default function SiteHome({ initialContent, locale, preview = false }: { 
       </section>
 
       <footer className="site-footer">
-        <div className="shell footer-top"><ManagedImage src="/brand/standard-bank-logo-white-official.png" alt="Standard Bank" width={1717} height={456} sizes="245px" /><nav aria-label={ui.footerNavigation}><a href="#campanha">{ui.nav.campaign}</a><a href="#territorio">Tchitundu-Hulu</a><a href="#galeria">{ui.nav.gallery}</a>{settings.newsEnabled && <a href="#noticias">{ui.nav.news}</a>}{settings.agendaEnabled && <a href="#cultura">{ui.nav.culture}</a>}<a href="#documentos">{ui.nav.documents}</a></nav></div>
+        <div className="shell footer-top"><ManagedImage src="/brand/standard-bank-logo-white-official.png" alt="Standard Bank" width={1717} height={456} sizes="245px" /><nav aria-label={ui.footerNavigation}><a href="#campanha">{ui.nav.campaign}</a><a href="#territorio">Tchitundu-Hulu</a><a href="#filme">{ui.nav.documentary}</a><a href="#galeria">{ui.nav.gallery}</a>{settings.newsEnabled && <a href="#noticias">{ui.nav.news}</a>}{settings.agendaEnabled && <a href="#cultura">{ui.nav.culture}</a>}<a href="#documentos">{ui.nav.documents}</a></nav></div>
         <div className="footer-corporate shell"><CorporateNotice value={legal.corporateNotice} /></div>
         <div className="shell footer-bottom"><span>{legal.copyright}</span><span className="footer-legal">{legal.privacyUrl && <a href={legal.privacyUrl}>{legal.privacyLabel}</a>}{legal.termsUrl && <a href={legal.termsUrl}>{legal.termsLabel}</a>}<a href={legal.cookiesUrl} target="_blank" rel="noreferrer">{ui.cookiePolicy}</a><button type="button" onClick={openCookieSettings}>{legal.cookiesLabel}</button></span><span>{legal.strapline}</span></div>
       </footer>
 
       <CookieConsent policyUrl={legal.cookiesUrl} locale={locale} />
 
-      <div className={`mobile-menu ${menuOpen ? "open" : ""}`} aria-hidden={!menuOpen}><div className="mobile-menu-inner"><p>{ui.explore}</p><a href="#campanha" onClick={closeMenu}>{ui.nav.campaign} <span>01</span></a><a href="#territorio" onClick={closeMenu}>{ui.nav.place} <span>02</span></a><a href="#galeria" onClick={closeMenu}>{ui.nav.gallery} <span>03</span></a>{settings.newsEnabled && <a href="#noticias" onClick={closeMenu}>{ui.nav.news} <span>04</span></a>}{settings.agendaEnabled && <a href="#cultura" onClick={closeMenu}>{ui.nav.cultureAgenda} <span>05</span></a>}<a href="#arquivo" onClick={closeMenu}>{ui.nav.archive} <span>06</span></a></div></div>
+      <div className={`mobile-menu ${menuOpen ? "open" : ""}`} aria-hidden={!menuOpen}><div className="mobile-menu-inner"><p>{ui.explore}</p><a href="#campanha" onClick={closeMenu}>{ui.nav.campaign} <span>01</span></a><a href="#territorio" onClick={closeMenu}>{ui.nav.place} <span>02</span></a><a href="#filme" onClick={closeMenu}>{ui.nav.documentary} <span>03</span></a><a href="#galeria" onClick={closeMenu}>{ui.nav.gallery} <span>04</span></a>{settings.preserveEnabled && <a href="#impacto" onClick={closeMenu}>{ui.nav.preserve} <span>05</span></a>}{settings.newsEnabled && <a href="#noticias" onClick={closeMenu}>{ui.nav.news} <span>06</span></a>}{settings.agendaEnabled && <a href="#cultura" onClick={closeMenu}>{ui.nav.cultureAgenda} <span>07</span></a>}<a href="#arquivo" onClick={closeMenu}>{ui.nav.archive} <span>08</span></a></div></div>
 
       {selectedImage && <div className="lightbox" role="dialog" aria-modal="true" aria-label={selectedImage.label} onClick={() => setSelectedIndex(null)}><button className="lightbox-close" type="button" onClick={() => setSelectedIndex(null)} aria-label={ui.closeImage}>×</button><button className="gallery-nav gallery-nav-prev" type="button" onClick={(event) => { event.stopPropagation(); moveGallery(-1); }} aria-label={ui.previousImage}>←</button><figure onClick={(event) => event.stopPropagation()}><ManagedImage src={selectedImage.src} alt={selectedImage.alt} width={2048} height={1434} sizes="(max-width: 760px) calc(100vw - 36px), 80vw" unoptimized /><figcaption><span>{selectedImage.label}</span><a className="gallery-download" href={selectedImage.src} download={downloadFilename(selectedImage.src, selectedImage.label)}>{ui.download} ↓</a><b>{String((selectedIndex ?? 0) + 1).padStart(2, "0")} / {String(gallery.length).padStart(2, "0")}</b></figcaption></figure><button className="gallery-nav gallery-nav-next" type="button" onClick={(event) => { event.stopPropagation(); moveGallery(1); }} aria-label={ui.nextImage}>→</button></div>}
 
@@ -255,7 +257,7 @@ function downloadFilename(src: string, label: string) {
 function ManagedImage({ src, alt, unoptimized, ...props }: ImageProps) {
   if (typeof src === "string" && !src.trim()) return null;
   const resolvedSrc = typeof src === "string" ? optimizedMediaUrl(src) : src;
-  const bypassOptimizer = typeof resolvedSrc === "string" && (/^(?:https?:|data:|blob:)/i.test(resolvedSrc) || resolvedSrc.startsWith("/api/"));
+  const bypassOptimizer = typeof resolvedSrc === "string" && (/^(?:https?:|data:|blob:)/i.test(resolvedSrc) || resolvedSrc.startsWith("/"));
   return <Image src={resolvedSrc} alt={alt} unoptimized={unoptimized ?? bypassOptimizer} {...props} />;
 }
 
@@ -289,7 +291,7 @@ const interfaceCopy = {
     unsupportedVideo: "O seu navegador não suporta vídeo HTML5.",
     filmPreparing: "O filme está em preparação.",
     filmPreparingText: "Este módulo está pronto para receber o documentário e os conteúdos audiovisuais oficiais da campanha.",
-    nav: { agenda: "Agenda cultural", campaign: "A campanha", place: "O lugar", gallery: "Galeria", preserve: "Preservar", news: "Notícias", culture: "Cultura", cultureAgenda: "Cultura e agenda", documents: "Documentos", archive: "Arquivo" },
+    nav: { agenda: "Agenda cultural", campaign: "A campanha", place: "O lugar", documentary: "Documentário", gallery: "Galeria", preserve: "Preservar", news: "Notícias", culture: "Cultura", cultureAgenda: "Cultura e agenda", documents: "Documentos", archive: "Arquivo" },
   },
   en: {
     preview: "Draft preview",
@@ -320,6 +322,6 @@ const interfaceCopy = {
     unsupportedVideo: "Your browser does not support HTML5 video.",
     filmPreparing: "The film is in preparation.",
     filmPreparingText: "This module is ready to receive the official documentary and audiovisual content from the campaign.",
-    nav: { agenda: "Cultural agenda", campaign: "The campaign", place: "The place", gallery: "Gallery", preserve: "Preserve", news: "News", culture: "Culture", cultureAgenda: "Culture and events", documents: "Documents", archive: "Archive" },
+    nav: { agenda: "Cultural agenda", campaign: "The campaign", place: "The place", documentary: "Documentary", gallery: "Gallery", preserve: "Preserve", news: "News", culture: "Culture", cultureAgenda: "Culture and events", documents: "Documents", archive: "Archive" },
   },
 } as const;

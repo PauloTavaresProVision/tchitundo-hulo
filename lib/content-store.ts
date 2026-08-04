@@ -118,16 +118,24 @@ function migrateSiteContent(content: SiteContent): SiteContent {
 }
 
 function migrateLocalizedMedia<T extends LocalizedSiteContent>(content: T): T {
+  const replaceDesignDefault = (value: string, legacyValues: string[], replacement: string) => legacyValues.includes(value) ? replacement : value;
   return {
     ...content,
     seo: {
       ...content.seo,
-      ogImage: content.seo.ogImage === "/og.png"
-        ? "/media/hero-sunset-portal.png"
-        : content.seo.ogImage,
+      ogImage: replaceDesignDefault(content.seo.ogImage, ["/og.png", "/media/hero-sunset-portal.png"], "/media/design/hero-tchitundu.webp"),
+    },
+    editorial: {
+      ...content.editorial,
+      hero: { ...content.editorial.hero, backgroundImage: replaceDesignDefault(content.editorial.hero.backgroundImage, ["/media/hero-sunset-portal.png"], "/media/design/hero-tchitundu.webp") },
+      campaign: { ...content.editorial.campaign, image: replaceDesignDefault(content.editorial.campaign.image, ["/media/community-rock.jpg", "/media/design/campaign-portrait.webp"], "/media/design/campaign-portrait-web.webp") },
+      territory: { ...content.editorial.territory, image: replaceDesignDefault(content.editorial.territory.image, ["/media/engraving-circles.jpg", "/media/design/territory-engravings.webp"], "/media/design/territory-engravings-web.webp") },
+      impact: { ...content.editorial.impact, backgroundImage: replaceDesignDefault(content.editorial.impact.backgroundImage, ["/media/gallery-rock-05.jpg", "/media/design/rock-art-strip.webp"], "/media/design/rock-art-strip-web.webp") },
+      closing: { ...content.editorial.closing, backgroundImage: replaceDesignDefault(content.editorial.closing.backgroundImage, ["/media/hero-aerial.jpg", "/media/design/community-group.webp"], "/media/design/community-group-web.webp") },
     },
     video: {
       ...content.video,
+      poster: replaceDesignDefault(content.video.poster, ["/media/community-guide.jpg", "/media/design/documentary-men.webp"], "/media/design/documentary-men-web.webp"),
       src: content.video.src === "/media/documentario-tchitundo-hulo.mp4"
         ? "https://www.youtube.com/watch?v=RXZhH_Ide44"
         : content.video.src,
@@ -259,6 +267,7 @@ function changeFieldLabel(field: string) {
     agendaEnabled: "visibilidade da agenda",
     newsEnabled: "visibilidade das notícias",
     languageSwitcherEnabled: "seletor de idioma",
+    preserveEnabled: "visibilidade de Preservar",
     slug: "endereço da notícia",
     category: "categoria",
     summary: "resumo",
@@ -345,8 +354,9 @@ function normalizeSiteSettings(value: unknown, fallback: SiteContent["settings"]
   const agendaEnabled = candidate.agendaEnabled ?? fallback.agendaEnabled;
   const newsEnabled = candidate.newsEnabled ?? fallback.newsEnabled;
   const languageSwitcherEnabled = candidate.languageSwitcherEnabled ?? fallback.languageSwitcherEnabled;
-  if (typeof agendaEnabled !== "boolean" || typeof newsEnabled !== "boolean" || typeof languageSwitcherEnabled !== "boolean") return null;
-  return { agendaEnabled, newsEnabled, languageSwitcherEnabled };
+  const preserveEnabled = candidate.preserveEnabled ?? fallback.preserveEnabled;
+  if (typeof agendaEnabled !== "boolean" || typeof newsEnabled !== "boolean" || typeof languageSwitcherEnabled !== "boolean" || typeof preserveEnabled !== "boolean") return null;
+  return { agendaEnabled, newsEnabled, languageSwitcherEnabled, preserveEnabled };
 }
 
 function normalizeEditorial(value: unknown, fallback: EditorialSettings): EditorialSettings | null {

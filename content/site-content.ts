@@ -65,6 +65,7 @@ export type SiteSettings = {
   agendaEnabled: boolean;
   newsEnabled: boolean;
   languageSwitcherEnabled: boolean;
+  preserveEnabled: boolean;
 };
 
 export type SiteLocale = "pt" | "en";
@@ -168,13 +169,14 @@ export const siteContent: SiteContent = {
     agendaEnabled: false,
     newsEnabled: true,
     languageSwitcherEnabled: true,
+    preserveEnabled: false,
   },
   seo: {
     title: "Tchitundu-Hulu | Standard Bank Angola",
     description: "Uma plataforma editorial dedicada ao património, à memória e ao futuro de Angola.",
     keywords: "Tchitundu-Hulu, património cultural, Angola, arte rupestre, Standard Bank Angola",
     canonicalUrl: "",
-    ogImage: "/media/hero-sunset-portal.png",
+    ogImage: "/media/design/hero-tchitundu.webp",
     indexable: true,
   },
   editorial: {
@@ -182,7 +184,7 @@ export const siteContent: SiteContent = {
       eyebrow: "Património · Angola · Futuro",
       lead: "Marcas na pedra. Memória viva.",
       ctaLabel: "Explorar a história",
-      backgroundImage: "/media/hero-sunset-portal.png",
+      backgroundImage: "/media/design/hero-tchitundu.webp",
       titleImage: "/media/tchitundu-hulu-lettering-transparent.png",
     },
     campaign: {
@@ -191,7 +193,7 @@ export const siteContent: SiteContent = {
       intro: "Tchitundu-Hulu é uma iniciativa de valorização do património cultural angolano promovida pelo Standard Bank de Angola.",
       body: "Mais do que olhar para o passado, a campanha reconhece na memória um ponto de partida para o futuro. Aproxima pessoas, conhecimento e território através de uma narrativa viva, respeitosa e duradoura.",
       ctaLabel: "Conhecer Tchitundu-Hulu",
-      image: "/media/community-rock.jpg",
+      image: "/media/design/campaign-portrait-web.webp",
       imageAlt: "Comunidade junto às formações rochosas de Tchitundu-Hulu",
       location: "Namibe · Angola",
     },
@@ -199,7 +201,7 @@ export const siteContent: SiteContent = {
       eyebrow: "O lugar",
       title: "Uma biblioteca\na céu aberto.",
       intro: "No sul de Angola, formações rochosas guardam um dos mais extraordinários conjuntos de arte rupestre do país. Tchitundu-Hulu reúne gravuras e pinturas que testemunham formas antigas de habitar, interpretar e representar o mundo.",
-      image: "/media/engraving-circles.jpg",
+      image: "/media/design/territory-engravings-web.webp",
       imageAlt: "Gravuras circulares de Tchitundu-Hulu",
       markerOne: "Mukai",
       markerTwo: "Mulume",
@@ -212,7 +214,7 @@ export const siteContent: SiteContent = {
       eyebrow: "Impacto e preservação",
       quote: "O património não é apenas aquilo que recebemos. É aquilo que escolhemos transmitir.",
       attribution: "Standard Bank Angola",
-      backgroundImage: "/media/gallery-rock-05.jpg",
+      backgroundImage: "/media/design/rock-art-strip-web.webp",
     },
     gallery: {
       eyebrow: "Galeria",
@@ -241,7 +243,7 @@ export const siteContent: SiteContent = {
       eyebrow: "Standard Bank Angola",
       title: "Da identidade\nao futuro.",
       description: "Continuamos a acreditar numa Angola que reconhece o valor da sua história e transforma essa memória em possibilidade.",
-      backgroundImage: "/media/hero-aerial.jpg",
+      backgroundImage: "/media/design/community-group-web.webp",
     },
   },
   video: {
@@ -252,7 +254,7 @@ export const siteContent: SiteContent = {
     type: "Documentário",
     status: "Disponível",
     language: "PT",
-    poster: "/media/community-guide.jpg",
+    poster: "/media/design/documentary-men-web.webp",
     src: "https://www.youtube.com/watch?v=RXZhH_Ide44",
     enabled: true,
   },
@@ -324,7 +326,7 @@ function createEnglishSiteContent(): LocalizedSiteContent {
       description: "An editorial platform dedicated to Angola's heritage, memory and future.",
       keywords: "Tchitundu-Hulu, cultural heritage, Angola, rock art, Standard Bank Angola",
       canonicalUrl: "",
-      ogImage: "/media/hero-sunset-portal.png",
+      ogImage: "/media/design/hero-tchitundu.webp",
       indexable: true,
     },
     editorial: {
@@ -332,7 +334,7 @@ function createEnglishSiteContent(): LocalizedSiteContent {
         eyebrow: "Heritage · Angola · Future",
         lead: "Marks in stone. Living memory.",
         ctaLabel: "Explore the story",
-        backgroundImage: "/media/hero-sunset-portal.png",
+        backgroundImage: "/media/design/hero-tchitundu.webp",
         titleImage: "/media/tchitundu-hulu-lettering-transparent.png",
       },
       campaign: {
@@ -341,7 +343,7 @@ function createEnglishSiteContent(): LocalizedSiteContent {
         intro: "Tchitundu-Hulu is a Standard Bank Angola initiative dedicated to celebrating and preserving Angola's cultural heritage.",
         body: "The campaign recognises memory as a starting point for the future. Through photography, film and editorial content, it connects people, knowledge and territory in a living, respectful and lasting narrative.",
         ctaLabel: "Discover Tchitundu-Hulu",
-        image: "/media/community-rock.jpg",
+        image: "/media/design/campaign-portrait-web.webp",
         imageAlt: "Community members beside the rock formations of Tchitundu-Hulu",
         location: "Namibe · Angola",
       },
@@ -349,7 +351,7 @@ function createEnglishSiteContent(): LocalizedSiteContent {
         eyebrow: "The place",
         title: "An open-air\nlibrary.",
         intro: "In southern Angola, rock formations preserve one of the country's most important collections of rock art. Tchitundu-Hulu brings together engravings and paintings left by peoples who inhabited this desert thousands of years ago.",
-        image: "/media/engraving-circles.jpg",
+        image: "/media/design/territory-engravings-web.webp",
         imageAlt: "Circular engravings at Tchitundu-Hulu",
         markerOne: "Mukai",
         markerTwo: "Mulume",
@@ -362,7 +364,7 @@ function createEnglishSiteContent(): LocalizedSiteContent {
         eyebrow: "Impact and preservation",
         quote: "Heritage is not only what we receive. It is what we choose to pass on.",
         attribution: "Standard Bank Angola",
-        backgroundImage: "/media/gallery-rock-05.jpg",
+        backgroundImage: "/media/design/rock-art-strip-web.webp",
       },
       gallery: {
         eyebrow: "Gallery",
@@ -391,7 +393,7 @@ function createEnglishSiteContent(): LocalizedSiteContent {
         eyebrow: "Standard Bank Angola",
         title: "From identity\nto the future.",
         description: "We continue to believe in an Angola that recognises the value of its history and transforms memory into possibility.",
-        backgroundImage: "/media/hero-aerial.jpg",
+        backgroundImage: "/media/design/community-group-web.webp",
       },
     },
     video: {
@@ -402,7 +404,7 @@ function createEnglishSiteContent(): LocalizedSiteContent {
       type: "Documentary",
       status: "Available",
       language: "PT · English subtitles",
-      poster: "/media/community-guide.jpg",
+      poster: "/media/design/documentary-men-web.webp",
       src: "https://www.youtube.com/watch?v=RXZhH_Ide44",
       enabled: true,
     },
