@@ -23,7 +23,7 @@
     "vinext": "0.0.50"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "1.47.0",
+    "@cloudflare/vite-plugin": "1.48.0",
     "@eslint/js": "10.0.1",
     "@tailwindcss/postcss": "4.2.1",
     "@types/node": "22.19.19",
