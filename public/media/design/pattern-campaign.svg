@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
-  <rect width="1600" height="1000" fill="#123fae"/>
-  <g fill="none" stroke="#001e64" stroke-width="185" stroke-linecap="round" stroke-linejoin="round">
+  <rect width="1600" height="1000" fill="#001e64"/>
+  <g fill="none" stroke="#123fae" stroke-width="185" stroke-linecap="round" stroke-linejoin="round">
     <path d="M-170 20C95 235 258 196 380 344c137 166-26 288 103 452 97 124 252 135 326 296"/>
     <path d="M330-180c193 267 310 304 291 527-19 219-161 340-43 601"/>
     <path d="M820-170c114 236 34 377 117 554 102 217 329 225 367 508"/>

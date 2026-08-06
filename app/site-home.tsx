@@ -72,7 +72,7 @@ export default function SiteHome({ initialContent, locale, preview = false }: { 
         <header className="site-header shell">
           <a className="brand" href="#inicio" aria-label={`Standard Bank, ${ui.home}`}><ManagedImage src="/brand/standard-bank-logo-white-official.png" alt="Standard Bank" width={1717} height={456} sizes="(max-width: 760px) 154px, 190px" priority /></a>
           <nav className="desktop-nav" aria-label={ui.primaryNavigation}>
-            {settings.agendaEnabled && <a href="#cultura">{ui.nav.agenda}</a>}<a href="#campanha">{ui.nav.campaign}</a><a href="#territorio">{ui.nav.place}</a><a href="#galeria">{ui.nav.gallery}</a>{settings.preserveEnabled && <a href="#impacto">{ui.nav.preserve}</a>}{settings.newsEnabled && <a href="#noticias">{ui.nav.news}</a>}
+            {settings.agendaEnabled && <a href="#cultura">{ui.nav.agenda}</a>}<a href="#campanha">{ui.nav.campaign}</a><a href="#territorio">{ui.nav.place}</a><a href="#galeria">{ui.nav.gallery}</a><a href="#impacto">{ui.nav.preserve}</a>{settings.newsEnabled && <a href="#noticias">{ui.nav.news}</a>}
           </nav>
           <div className="header-controls">
             {settings.languageSwitcherEnabled && <nav className="language-switcher" aria-label={ui.languageSelection}><a className={locale === "pt" ? "active" : ""} href="/">PT</a><span>/</span><a className={locale === "en" ? "active" : ""} href="/en">EN</a></nav>}
@@ -113,7 +113,7 @@ export default function SiteHome({ initialContent, locale, preview = false }: { 
 
       <section className="territory" id="territorio" aria-labelledby="territory-title">
         <div className="shell territory-heading">
-          <div><p className="eyebrow dark">{editorial.territory.eyebrow}</p><h2 id="territory-title"><Lines value={editorial.territory.title} /></h2></div>
+          <div><p className="eyebrow dark">{editorial.territory.eyebrow}</p><h2 id="territory-title"><EmphasizedLineEnd value={editorial.territory.title} /></h2></div>
           <p>{editorial.territory.intro}</p>
         </div>
         <div className="territory-stage shell">
@@ -131,11 +131,11 @@ export default function SiteHome({ initialContent, locale, preview = false }: { 
       {settings.preserveEnabled ? <section className="manifesto" id="impacto" aria-label={ui.preservationManifesto}>
         <div className="manifesto-image" aria-hidden="true"><ManagedImage src={editorial.impact.backgroundImage} alt="" fill sizes="100vw" /></div>
         <div className="shell manifesto-content"><p className="eyebrow">{editorial.impact.eyebrow}</p><blockquote>“{editorial.impact.quote}”</blockquote><p>{editorial.impact.attribution}</p></div>
-      </section> : <section className="visual-break visual-break-rock" aria-hidden="true"><ManagedImage src={editorial.impact.backgroundImage} alt="" fill sizes="100vw" /></section>}
+      </section> : <section className="visual-break visual-break-rock" id="impacto" aria-hidden="true"><ManagedImage src={editorial.impact.backgroundImage} alt="" fill sizes="100vw" /></section>}
 
       {settings.newsEnabled && <section className="news-section" id="noticias" aria-labelledby="news-title">
         <div className="shell news-heading">
-          <div><p className="eyebrow dark">{editorial.news.eyebrow}</p><h2 id="news-title"><Lines value={editorial.news.title} /></h2></div>
+          <div><p className="eyebrow dark">{editorial.news.eyebrow}</p><h2 id="news-title"><NewsTitle value={editorial.news.title} /></h2></div>
           <p>{editorial.news.description}</p>
         </div>
         {publishedNews.length ? <div className="news-grid shell">{publishedNews.map((item) => <article key={item.id}>
@@ -182,14 +182,14 @@ export default function SiteHome({ initialContent, locale, preview = false }: { 
       </section>
 
       <footer className="site-footer">
-        <div className="shell footer-top"><ManagedImage src="/brand/standard-bank-shield-official.png" alt="Standard Bank" width={405} height={456} sizes="72px" /><nav aria-label={ui.footerNavigation}><a href="#campanha">{ui.nav.campaign}</a><a href="#territorio">Tchitundu-Hulu</a><a href="#galeria">{ui.nav.gallery}</a>{settings.newsEnabled && <a href="#noticias">{ui.nav.news}</a>}<a href="#documentos">{ui.nav.documents}</a></nav></div>
+        <div className="shell footer-top"><ManagedImage src="/brand/standard-bank-logo-white-official.png" alt="Standard Bank" width={1664} height={664} sizes="(max-width: 760px) 180px, 230px" /><nav aria-label={ui.footerNavigation}><a href="#campanha">{ui.nav.campaign}</a><a href="#territorio">Tchitundu-Hulu</a><a href="#galeria">{ui.nav.gallery}</a>{settings.newsEnabled && <a href="#noticias">{ui.nav.news}</a>}<a href="#documentos">{ui.nav.documents}</a></nav></div>
         <div className="footer-corporate shell"><CorporateNotice value={legal.corporateNotice} /></div>
         <div className="shell footer-bottom"><span>{legal.copyright}</span><span className="footer-legal">{legal.privacyUrl && <a href={legal.privacyUrl}>{legal.privacyLabel}</a>}{legal.termsUrl && <a href={legal.termsUrl}>{legal.termsLabel}</a>}<a href={legal.cookiesUrl} target="_blank" rel="noreferrer">{ui.cookiePolicy}</a><button type="button" onClick={openCookieSettings}>{legal.cookiesLabel}</button></span><span>{legal.strapline}</span></div>
       </footer>
 
       <CookieConsent policyUrl={legal.cookiesUrl} locale={locale} />
 
-      <div className={`mobile-menu ${menuOpen ? "open" : ""}`} aria-hidden={!menuOpen}><div className="mobile-menu-inner"><p>{ui.explore}</p><a href="#campanha" onClick={closeMenu}>{ui.nav.campaign} <span>01</span></a><a href="#territorio" onClick={closeMenu}>{ui.nav.place} <span>02</span></a><a href="#filme" onClick={closeMenu}>{ui.nav.documentary} <span>03</span></a><a href="#galeria" onClick={closeMenu}>{ui.nav.gallery} <span>04</span></a>{settings.preserveEnabled && <a href="#impacto" onClick={closeMenu}>{ui.nav.preserve} <span>05</span></a>}{settings.newsEnabled && <a href="#noticias" onClick={closeMenu}>{ui.nav.news} <span>06</span></a>}{settings.agendaEnabled && <a href="#cultura" onClick={closeMenu}>{ui.nav.cultureAgenda} <span>07</span></a>}<a href="#arquivo" onClick={closeMenu}>{ui.nav.archive} <span>08</span></a></div></div>
+      <div className={`mobile-menu ${menuOpen ? "open" : ""}`} aria-hidden={!menuOpen}><div className="mobile-menu-inner"><p>{ui.explore}</p><a href="#campanha" onClick={closeMenu}>{ui.nav.campaign} <span>01</span></a><a href="#territorio" onClick={closeMenu}>{ui.nav.place} <span>02</span></a><a href="#filme" onClick={closeMenu}>{ui.nav.documentary} <span>03</span></a><a href="#galeria" onClick={closeMenu}>{ui.nav.gallery} <span>04</span></a><a href="#impacto" onClick={closeMenu}>{ui.nav.preserve} <span>05</span></a>{settings.newsEnabled && <a href="#noticias" onClick={closeMenu}>{ui.nav.news} <span>06</span></a>}{settings.agendaEnabled && <a href="#cultura" onClick={closeMenu}>{ui.nav.cultureAgenda} <span>07</span></a>}<a href="#arquivo" onClick={closeMenu}>{ui.nav.archive} <span>08</span></a></div></div>
 
       {selectedImage && <div className="lightbox" role="dialog" aria-modal="true" aria-label={selectedImage.label} onClick={() => setSelectedIndex(null)}><button className="lightbox-close" type="button" onClick={() => setSelectedIndex(null)} aria-label={ui.closeImage}>×</button><button className="gallery-nav gallery-nav-prev" type="button" onClick={(event) => { event.stopPropagation(); moveGallery(-1); }} aria-label={ui.previousImage}>←</button><figure onClick={(event) => event.stopPropagation()}><ManagedImage src={selectedImage.src} alt={selectedImage.alt} width={2048} height={1434} sizes="(max-width: 760px) calc(100vw - 36px), 80vw" unoptimized /><figcaption><span>{selectedImage.label}</span><a className="gallery-download" href={selectedImage.src} download={downloadFilename(selectedImage.src, selectedImage.label)}>{ui.download} ↓</a><b>{String((selectedIndex ?? 0) + 1).padStart(2, "0")} / {String(gallery.length).padStart(2, "0")}</b></figcaption></figure><button className="gallery-nav gallery-nav-next" type="button" onClick={(event) => { event.stopPropagation(); moveGallery(1); }} aria-label={ui.nextImage}>→</button></div>}
 
@@ -200,6 +200,25 @@ export default function SiteHome({ initialContent, locale, preview = false }: { 
 
 function Lines({ value }: { value: string }) {
   return <>{value.split("\n").map((line, index) => <span key={`${line}-${index}`}>{index > 0 && <br />}{line}</span>)}</>;
+}
+
+function NewsTitle({ value }: { value: string }) {
+  return <>{value.split("\n").map((line, index) => {
+    const pair = line.match(/^(.*[Óó])([Rr])(.*)$/);
+    return <span className="news-title-line" key={`${line}-${index}`}>
+      {index > 0 && <br />}
+      {pair ? <>{pair[1]}<span className="news-kern-fix">{pair[2]}</span>{pair[3]}</> : line}
+    </span>;
+  })}</>;
+}
+
+function EmphasizedLineEnd({ value }: { value: string }) {
+  return <>{value.split("\n").map((line, index) => {
+    const parts = line.trim().split(/\s+/);
+    const finalWord = parts.pop() || line;
+    const prefix = parts.length ? `${parts.join(" ")} ` : "";
+    return <span key={`${line}-${index}`}>{index > 0 && <br />}{prefix}<strong>{finalWord}</strong></span>;
+  })}</>;
 }
 
 function DottedEyebrow({ value }: { value: string }) {
