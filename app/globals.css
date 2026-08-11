@@ -1560,7 +1560,7 @@ body { background: var(--th-navy); font-family: "Benton Sans", Arial, sans-serif
   content: "";
   position: absolute;
   inset: 0 0 0 46%;
-  background: url("/media/design/motif-gallery.webp") center / cover no-repeat;
+  background: url("/media/design/originals/background-campaign.png") center / cover no-repeat;
   opacity: .68;
   pointer-events: none;
 }
@@ -1608,7 +1608,7 @@ body { background: var(--th-navy); font-family: "Benton Sans", Arial, sans-serif
   right: 0;
   width: 38%;
   height: 100%;
-  background: url("/media/design/motif-territory-clean.webp") right center / auto 100% no-repeat;
+  background: url("/media/design/originals/background-territory.png") right center / auto 100% no-repeat;
   opacity: .72;
   pointer-events: none;
 }
@@ -1657,7 +1657,7 @@ body { background: var(--th-navy); font-family: "Benton Sans", Arial, sans-serif
   content: "";
   position: absolute;
   inset: 0;
-  background: url("/media/design/motif-gallery.webp") right center / auto 120% no-repeat;
+  background: url("/media/design/originals/background-news.png") center / cover no-repeat;
   opacity: .5;
   pointer-events: none;
 }
@@ -1693,7 +1693,7 @@ body { background: var(--th-navy); font-family: "Benton Sans", Arial, sans-serif
   content: "";
   position: absolute;
   inset: 0;
-  background: url("/media/design/motif-gallery.webp") center / cover no-repeat;
+  background: url("/media/design/originals/background-gallery.png") center / cover no-repeat;
   opacity: .58;
   pointer-events: none;
 }
@@ -1726,7 +1726,7 @@ body { background: var(--th-navy); font-family: "Benton Sans", Arial, sans-serif
   content: "";
   position: absolute;
   inset: 0;
-  background: url("/media/design/motif-documents-clean.webp") center / cover no-repeat;
+  background: url("/media/design/originals/background-documents.png") center / cover no-repeat;
   opacity: .46;
   pointer-events: none;
 }
@@ -1748,7 +1748,7 @@ body { background: var(--th-navy); font-family: "Benton Sans", Arial, sans-serif
   content: "";
   position: absolute;
   inset: 0;
-  background: url("/media/design/motif-gallery.webp") center / cover no-repeat;
+  background: url("/media/design/originals/background-archive.png") center / cover no-repeat;
   opacity: .7;
   pointer-events: none;
 }
@@ -2009,7 +2009,7 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
   position: relative;
   overflow: hidden;
   padding: 176px 0 210px;
-  background: var(--pdf-royal) url("/media/design/pattern-campaign.svg") center / cover no-repeat;
+  background: var(--pdf-royal) url("/media/design/originals/background-campaign.png") center / cover no-repeat;
 }
 .campaign::before { display: none; }
 .section-grid {
@@ -2137,7 +2137,7 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
   inset: 0 0 0 auto;
   width: 27%;
   height: 100%;
-  background: url("/media/design/motif-territory-clean.webp") right center / auto 100% no-repeat;
+  background: url("/media/design/originals/background-territory.png") right center / auto 100% no-repeat;
   opacity: .86;
 }
 .territory-heading {
@@ -2181,7 +2181,7 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
   position: relative;
   overflow: hidden;
   padding: 170px 0 192px;
-  background: var(--pdf-navy) url("/media/design/pattern-news.svg") center / cover no-repeat;
+  background: var(--pdf-navy) url("/media/design/originals/background-news.png") center / cover no-repeat;
   color: #fff;
 }
 .news-section::before { display: none; }
@@ -2226,7 +2226,7 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
   position: relative;
   overflow: hidden;
   padding: 174px 0 210px;
-  background: var(--pdf-navy) url("/media/design/pattern-gallery.svg") center / cover no-repeat;
+  background: var(--pdf-navy) url("/media/design/originals/background-gallery.png") center / cover no-repeat;
 }
 .gallery-section::before { display: none; }
 .gallery-heading,
@@ -2264,7 +2264,7 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
   overflow: hidden;
   min-height: 780px;
   padding: 166px 0 180px;
-  background: var(--pdf-navy) url("/media/design/motif-documents-clean.webp") center / cover no-repeat;
+  background: var(--pdf-navy) url("/media/design/originals/background-documents.png") center / cover no-repeat;
 }
 .documents::before { display: none; }
 .documents-layout { position: relative; z-index: 2; display: grid; grid-template-columns: 1.05fr .95fr; gap: 92px; align-items: start; }
@@ -2279,7 +2279,7 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
   position: relative;
   overflow: hidden;
   padding: 165px 0 210px;
-  background: var(--pdf-navy) url("/media/design/pattern-archive.svg") center / cover no-repeat;
+  background: var(--pdf-navy) url("/media/design/originals/background-archive.png") center / cover no-repeat;
   color: #fff;
 }
 .archive::before { display: none; }
@@ -2528,7 +2528,7 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
   content: "";
   position: absolute;
   inset: 0;
-  background: url("/media/design/pattern-campaign.svg") center / cover no-repeat;
+  background: url("/media/design/originals/background-campaign.png") center / cover no-repeat;
   opacity: .96;
   pointer-events: none;
 }
@@ -2552,10 +2552,11 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
   background: var(--pdf-electric);
 }
 .territory::before {
-  width: min(26vw, 390px);
-  background-size: contain;
+  width: 100%;
+  background-size: auto 100%;
   background-position: right center;
-  opacity: .24;
+  background-repeat: no-repeat;
+  opacity: 1;
 }
 .territory-heading {
   grid-template-columns: minmax(0, 1.15fr) minmax(320px, .65fr);
@@ -2615,7 +2616,7 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
   content: "";
   position: absolute;
   inset: 0;
-  background: url("/media/design/pattern-news.svg") center / cover no-repeat;
+  background: url("/media/design/originals/background-news.png") center / cover no-repeat;
   opacity: 1;
   pointer-events: none;
 }
@@ -2679,7 +2680,7 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
   content: "";
   position: absolute;
   inset: 0;
-  background-image: url("/media/design/pattern-gallery.svg");
+  background-image: url("/media/design/originals/background-gallery.png");
   background-position: center top;
   background-size: 100% auto;
   background-repeat: no-repeat;
@@ -2728,7 +2729,7 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
   content: "";
   position: absolute;
   inset: 0;
-  background-image: url("/media/design/motif-documents-clean.webp");
+  background-image: url("/media/design/originals/background-documents.png");
   background-position: left center;
   background-size: auto 100%;
   background-repeat: repeat-x;
@@ -2771,7 +2772,7 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
   content: "";
   position: absolute;
   inset: 0;
-  background: url("/media/design/pattern-archive.svg") center / cover no-repeat;
+  background: url("/media/design/originals/background-archive.png") center / cover no-repeat;
   opacity: 1;
   pointer-events: none;
 }
@@ -2917,21 +2918,19 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
   .campaign-visual { aspect-ratio: 1.07; }
 
   .territory::before {
-    width: 25%;
-    opacity: .72;
+    width: 100%;
+    opacity: 1;
   }
   .territory-heading.shell {
-    width: calc(100% - clamp(40px, 3vw, 60px));
-    margin-left: clamp(20px, 1.5vw, 30px);
-    margin-right: 0;
-    grid-template-columns: 45% 25%;
-    gap: 5%;
+    width: var(--editorial-shell);
+    margin-inline: auto;
+    grid-template-columns: minmax(0, 1.15fr) minmax(320px, .65fr);
+    gap: var(--editorial-gap);
   }
   .territory-stage.shell {
-    width: 75%;
-    margin-left: clamp(20px, 1.5vw, 30px);
-    margin-right: 0;
-    grid-template-columns: 2fr 1fr;
+    width: var(--editorial-shell);
+    margin-inline: auto;
+    grid-template-columns: minmax(0, 1.7fr) minmax(300px, .72fr);
   }
   .territory-image {
     min-height: 0;
@@ -3065,7 +3064,7 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
   }
   .campaign-visual img { height: 100%; min-height: 0; }
 
-  .territory::before { width: 78%; opacity: .18; }
+  .territory::before { width: 100%; opacity: 1; }
   .territory-heading,
   .news-heading,
   .gallery-heading {
@@ -3169,4 +3168,46 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
   .cookie-banner a { margin-top: 8px; font-size: 10px; }
   .cookie-actions { gap: 8px; }
   .cookie-actions button { min-height: 42px; font-size: 9px; }
+}
+
+/* Persistent public navigation. The header stays transparent on the hero and
+   gains a legible navy surface as soon as the page starts moving. */
+html { scroll-padding-top: 96px; }
+.hero { padding-top: 82px; }
+.site-header.shell {
+  position: fixed;
+  z-index: 490;
+  top: 0;
+  left: clamp(24px, 2.2vw, 42px);
+  right: clamp(48px, 6.8vw, 132px);
+  width: auto;
+  margin: 0;
+  isolation: isolate;
+}
+.site-header::before {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  inset: 0 0 auto;
+  width: auto;
+  height: 82px;
+  background: rgba(0, 18, 61, .92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  opacity: 0;
+  transition: opacity .22s ease;
+}
+.site-header.is-scrolled::before { opacity: 1; }
+.site-header.is-scrolled { border-bottom-color: rgba(255, 255, 255, .32); }
+.preview-banner ~ .hero .site-header { top: 38px; }
+.preview-banner ~ .hero .site-header::before { top: 38px; }
+
+@media (max-width: 760px) {
+  html { scroll-padding-top: 76px; }
+  .hero { padding-top: 62px; }
+  .site-header.shell {
+    left: 17px;
+    right: 17px;
+  }
+  .site-header::before { height: 62px; }
 }

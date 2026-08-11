@@ -127,7 +127,7 @@ function migrateLocalizedMedia<T extends LocalizedSiteContent>(content: T): T {
     },
     editorial: {
       ...content.editorial,
-      hero: { ...content.editorial.hero, backgroundImage: replaceDesignDefault(content.editorial.hero.backgroundImage, ["/media/design/hero-tchitundu.webp"], "/media/hero-sunset-portal.png") },
+      hero: { ...content.editorial.hero, backgroundImage: replaceDesignDefault(content.editorial.hero.backgroundImage, ["/media/design/hero-tchitundu.webp", "/media/design/originals/background-hero.png"], "/media/hero-sunset-portal.png") },
       campaign: { ...content.editorial.campaign, image: replaceDesignDefault(content.editorial.campaign.image, ["/media/community-rock.jpg", "/media/design/campaign-portrait.webp"], "/media/design/campaign-portrait-web.webp") },
       territory: { ...content.editorial.territory, image: replaceDesignDefault(content.editorial.territory.image, ["/media/engraving-circles.jpg", "/media/design/territory-engravings.webp"], "/media/design/territory-engravings-web.webp") },
       impact: { ...content.editorial.impact, backgroundImage: replaceDesignDefault(content.editorial.impact.backgroundImage, ["/media/gallery-rock-05.jpg", "/media/design/rock-art-strip.webp"], "/media/design/rock-art-strip-web.webp") },
