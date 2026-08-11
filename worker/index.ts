@@ -52,6 +52,7 @@ export default worker;
 
 function withSecurityHeaders(response: Response, request: Request) {
   const headers = new Headers(response.headers);
+  const pathname = new URL(request.url).pathname;
   const secure = requestProtocol(request) === "https";
   const policy = [
     "default-src 'self'",
@@ -76,7 +77,13 @@ function withSecurityHeaders(response: Response, request: Request) {
   headers.set("Cross-Origin-Opener-Policy", "same-origin");
   headers.set("Cross-Origin-Resource-Policy", "same-origin");
   if (secure) headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
-  if (new URL(request.url).pathname.startsWith("/admin") || new URL(request.url).pathname.startsWith("/api/admin") || new URL(request.url).pathname === "/preview") {
+  if (pathname.startsWith("/assets/")) {
+    // Vinext's asset names can remain stable between container rebuilds. Force
+    // browsers and reverse proxies to revalidate instead of retaining stale UI
+    // bundles for a year under an `immutable` response.
+    headers.set("Cache-Control", "public, max-age=0, must-revalidate");
+  }
+  if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin") || pathname === "/preview") {
     headers.set("Cache-Control", "no-store, max-age=0");
     headers.set("Pragma", "no-cache");
   }

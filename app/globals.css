@@ -2475,6 +2475,7 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
   --editorial-heading: clamp(52px, 4.7vw, 76px);
   --editorial-copy: clamp(15px, 1.05vw, 17px);
   --editorial-gap: clamp(52px, 6vw, 96px);
+  --asset-cache-revision: 20260811;
 }
 
 .shell {
