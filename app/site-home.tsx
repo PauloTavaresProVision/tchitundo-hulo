@@ -69,7 +69,7 @@ export default function SiteHome({ initialContent, locale, preview = false }: { 
       <section className="hero" id="inicio" aria-labelledby="hero-title">
         <div className="hero-photo" aria-hidden="true"><ManagedImage src={editorial.hero.backgroundImage} alt="" fill sizes="100vw" priority /></div>
         <div className="hero-grain" aria-hidden="true" />
-        <header className="site-header shell">
+        <header className={`site-header shell ${scrollProgress > 0.004 ? "is-scrolled" : ""}`}>
           <a className="brand" href="#inicio" aria-label={`Standard Bank, ${ui.home}`}><ManagedImage src="/brand/standard-bank-logo-white-official.png" alt="Standard Bank" width={1717} height={456} sizes="(max-width: 760px) 154px, 190px" priority /></a>
           <nav className="desktop-nav" aria-label={ui.primaryNavigation}>
             {settings.agendaEnabled && <a href="#cultura">{ui.nav.agenda}</a>}<a href="#campanha">{ui.nav.campaign}</a><a href="#territorio">{ui.nav.place}</a><a href="#galeria">{ui.nav.gallery}</a><a href="#impacto">{ui.nav.preserve}</a>{settings.newsEnabled && <a href="#noticias">{ui.nav.news}</a>}
