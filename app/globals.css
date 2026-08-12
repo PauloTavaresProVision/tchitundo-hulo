@@ -2470,7 +2470,7 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
    that direction into a responsive web system instead of reproducing print
    dimensions. Keep this block last so there is one authoritative layout layer. */
 :root {
-  --editorial-shell: min(1440px, calc(100% - clamp(40px, 6vw, 112px)));
+  --editorial-shell: min(1440px, max(960px, 75vw), calc(100% - 40px));
   --editorial-section-y: clamp(96px, 8vw, 136px);
   --editorial-heading: clamp(52px, 4.7vw, 76px);
   --editorial-copy: clamp(15px, 1.05vw, 17px);
@@ -2492,7 +2492,7 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
 
 .hero h1.hero-title-art {
   width: min(840px, 45vw);
-  margin-left: calc((100vw - min(1440px, calc(100vw - clamp(40px, 6vw, 112px)))) / -2 + clamp(20px, 2vw, 38px));
+  margin-left: 0;
 }
 
 .campaign h2,
@@ -2682,8 +2682,8 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
   position: absolute;
   inset: 0;
   background-image: url("/media/design/originals/background-gallery.png");
-  background-position: center top;
-  background-size: 100% auto;
+  background-position: center;
+  background-size: 100% 100%;
   background-repeat: no-repeat;
   opacity: 1;
   pointer-events: none;
@@ -2731,19 +2731,22 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
   position: absolute;
   inset: 0;
   background-image: url("/media/design/originals/background-documents.png");
-  background-position: left center;
-  background-size: auto 100%;
-  background-repeat: repeat-x;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
   opacity: 1;
   pointer-events: none;
 }
 .documents-layout {
-  grid-template-columns: minmax(0, .9fr) minmax(520px, 1.1fr);
-  gap: var(--editorial-gap);
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
+  gap: clamp(56px, 5vw, 80px);
   align-items: start;
 }
 .documents h2 {
-  max-width: 720px;
+  max-width: 620px;
+  font-size: var(--editorial-heading);
+  line-height: .94;
+  font-weight: 400;
 }
 .document-list {
   margin-top: clamp(32px, 3.5vw, 52px);
@@ -2778,17 +2781,18 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
   pointer-events: none;
 }
 .archive-heading {
-  width: min(860px, 60vw);
+  width: var(--editorial-shell);
   margin-inline: auto;
   margin-bottom: clamp(50px, 4.7vw, 68px);
 }
 .archive h2 {
-  max-width: 500px;
-  font-size: clamp(46px, 4vw, 60px);
-  line-height: .92;
+  max-width: 620px;
+  font-size: var(--editorial-heading);
+  line-height: .94;
+  font-weight: 400;
 }
 .archive-grid {
-  width: min(860px, 60vw);
+  width: var(--editorial-shell);
   margin-inline: auto;
   gap: 0;
 }
@@ -2821,15 +2825,15 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
 .site-footer { padding: clamp(46px, 3.4vw, 64px) 0 24px; }
 .footer-top {
   display: grid;
-  grid-template-columns: minmax(210px, 240px) minmax(0, 1fr);
+  grid-template-columns: minmax(160px, 185px) minmax(0, 1fr);
   gap: clamp(52px, 6vw, 110px);
   align-items: start;
   padding-bottom: clamp(36px, 3vw, 52px);
 }
 .footer-top img {
-  width: clamp(210px, 13vw, 240px);
+  width: clamp(160px, 10vw, 185px);
   height: auto;
-  max-height: 96px;
+  max-height: 74px;
   object-fit: contain;
   object-position: left top;
 }
@@ -2867,7 +2871,7 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
 
 @media (min-width: 1101px) {
   .site-header .brand {
-    width: clamp(175px, 10.5vw, 210px);
+    width: clamp(135px, 10.5vw, 200px);
     height: auto;
   }
   .site-header .brand img {
@@ -2875,13 +2879,13 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
     max-height: 60px;
   }
   .desktop-nav {
-    gap: clamp(32px, 2.4vw, 46px);
-    font-size: clamp(11px, .67vw, 13px);
+    gap: clamp(24px, 2vw, 40px);
+    font-size: clamp(10px, .62vw, 12px);
     letter-spacing: .1em;
   }
   .header-controls { gap: 24px; }
   .language-switcher {
-    font-size: clamp(10px, .62vw, 12px);
+    font-size: clamp(9px, .58vw, 11px);
     letter-spacing: .1em;
   }
 
@@ -2904,13 +2908,15 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
     height: clamp(42px, 3.2vw, 52px);
   }
   .campaign .section-grid {
+    width: var(--editorial-shell);
+    margin-inline: auto;
     grid-template-columns: 32% 42%;
     gap: 9%;
     align-items: center;
   }
   .campaign-copy {
     width: min(100%, 520px);
-    padding-left: clamp(30px, 3vw, 56px);
+    padding-left: 0;
   }
   .campaign h2 {
     font-size: clamp(48px, 3.55vw, 62px);
@@ -3013,10 +3019,10 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
   .territory-image { min-height: 540px; }
   .documents-layout { grid-template-columns: .82fr 1.18fr; }
   .footer-top {
-    grid-template-columns: minmax(180px, 210px) minmax(0, 1fr);
+    grid-template-columns: minmax(150px, 170px) minmax(0, 1fr);
     gap: 42px;
   }
-  .footer-top img { width: clamp(180px, 20vw, 210px); }
+  .footer-top img { width: clamp(150px, 17vw, 170px); }
   .footer-top nav {
     grid-template-columns: repeat(2, minmax(110px, auto));
     gap: 17px 34px;
@@ -3105,10 +3111,11 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
   .documents::before {
     background-position: center top;
     background-size: auto 100%;
+    background-repeat: no-repeat;
     opacity: 1;
   }
   .documents-layout { display: grid; grid-template-columns: 1fr; gap: 38px; }
-  .documents h2 { font-size: min(var(--editorial-heading), 46px); }
+  .documents h2 { font-size: var(--editorial-heading); }
   .document-list { margin-top: 0; }
   .document-list > * {
     min-height: 100px;
@@ -3125,7 +3132,7 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
   }
   .archive h2 {
     max-width: 440px;
-    font-size: min(var(--editorial-heading), 52px);
+    font-size: var(--editorial-heading);
   }
   .archive-grid { grid-template-columns: 1fr; }
   .archive-grid article,
@@ -3142,7 +3149,7 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
     gap: 28px;
     padding-bottom: 30px;
   }
-  .footer-top img { width: 180px; height: auto; }
+  .footer-top img { width: 148px; height: auto; }
   .footer-top nav {
     width: 100%;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3179,10 +3186,11 @@ html { scroll-padding-top: 96px; }
   position: fixed;
   z-index: 490;
   top: 0;
-  left: clamp(24px, 2.2vw, 42px);
-  right: clamp(48px, 6.8vw, 132px);
-  width: auto;
-  margin: 0;
+  left: 0;
+  right: 0;
+  width: var(--editorial-shell);
+  margin-inline: auto;
+  transform: none;
   isolation: isolate;
 }
 .site-header::before {
@@ -3207,8 +3215,8 @@ html { scroll-padding-top: 96px; }
   html { scroll-padding-top: 76px; }
   .hero { padding-top: 62px; }
   .site-header.shell {
-    left: 17px;
-    right: 17px;
+    left: 0;
+    right: 0;
   }
   .site-header::before { height: 62px; }
 }
