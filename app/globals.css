@@ -2554,7 +2554,7 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
 }
 .territory::before {
   width: 100%;
-  background-size: auto 100%;
+  background-size: cover;
   background-position: right center;
   background-repeat: no-repeat;
   opacity: 1;
@@ -2910,7 +2910,7 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
   .campaign .section-grid {
     width: var(--editorial-shell);
     margin-inline: auto;
-    grid-template-columns: 32% 42%;
+    grid-template-columns: 32% 59%;
     gap: 9%;
     align-items: center;
   }
@@ -2922,7 +2922,7 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
     font-size: clamp(48px, 3.55vw, 62px);
     font-weight: 600;
   }
-  .campaign-visual { aspect-ratio: 1.07; }
+  .campaign-visual { aspect-ratio: 1.5; }
 
   .territory::before {
     width: 100%;
