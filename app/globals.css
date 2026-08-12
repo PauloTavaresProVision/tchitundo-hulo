@@ -2960,7 +2960,7 @@ body { font-family: "Benton Sans", Arial, sans-serif; }
   .news-heading.shell,
   .news-empty.shell,
   .news-grid.shell {
-    width: min(1036px, calc(100% - 48px));
+    width: var(--editorial-shell);
   }
   .news-heading {
     grid-template-columns: minmax(0, 1.92fr) minmax(280px, 1fr);
